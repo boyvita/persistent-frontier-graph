@@ -1,0 +1,127 @@
+# How the algorithm works
+
+The library treats layout as a sequence of complete, deterministic coordinate
+sets. This is the central difference from independently animating nodes toward
+new targets.
+
+## Pipeline
+
+```mermaid
+flowchart LR
+  T[Immutable rooted tree] --> V[Validate and index]
+  V --> S[Shared frontier snapshot]
+  S --> C[Cone coordinate sets]
+  S --> R[Radial pull projection]
+  C --> W[Exact cone viewport set]
+  K[Cone camera and canvas size] --> W
+  C --> U[One synchronized React render]
+  R --> U
+  W --> U
+  U --> A[Cone and radial views]
+```
+
+The tree owns structure. The frontier owns reveal depth. Layouts own derived
+coordinates. The composite React boundary owns the camera snapshots and canvas
+sizes. It derives the cone window and radial membership before rendering either
+view, so a child effect cannot introduce a stale radial frame.
+
+## 1. Index once
+
+`indexTree` builds maps for nodes, children, parents, and depths through an
+iterative breadth-first traversal. Siblings use stable ID ordering, so equal
+inputs never depend on object enumeration or browser timing.
+
+## 2. Find an integer frontier boundary
+
+For a level `k`, depth-first traversal stops at either:
+
+- the first node at depth `k`; or
+- a terminal node above `k`.
+
+The result is a left-to-right boundary with exactly one representative for
+every branch. It preserves the leaf ordering of the whole tree.
+
+Adjacent representatives are separated by a base card gap. When their lowest
+common ancestor is farther away, the algorithm adds a bounded hierarchy gap.
+This makes family boundaries readable without allowing sparse trees to explode
+in height.
+
+## 3. Center parents bottom-up
+
+After boundary centers are known, each ancestor receives:
+
+```text
+parentY = (minimumDirectChildY + maximumDirectChildY) / 2
+```
+
+The calculation proceeds from deepest nodes to the root. A subtree therefore
+remains one contiguous interval, and its parent never drifts toward whichever
+child happened to be inserted last.
+
+Nodes below the current boundary retain their real X depth but inherit their
+boundary ancestor's Y. They are spatially collapsed without corrupting
+hierarchy depth.
+
+## 4. Interpolate whole layouts
+
+For fractional frontier `F`, the library calculates the lower and upper integer
+sets and blends every node:
+
+```text
+position(F) = position(floor(F)) × (1 - α)
+            + position(ceil(F))  × α
+
+α = F - floor(F)
+```
+
+Because both endpoints are valid complete layouts, all intermediate positions
+keep subtree order. Lines remain attached to the exact node centers.
+
+## 5. Build canonical radial geometry
+
+Terminal nodes receive ordered angles between the fixed seam paddings near
+`-π` and `π`. Each parent uses the midpoint of its extreme child angles.
+Hierarchy depth chooses the ring, while density can only push a ring farther
+out—it can never create a false depth.
+
+```text
+radius[d] = max(
+  radius[d - 1] + minimumRingGap,
+  nodesAtDepth[d] × nodePitch / 2π
+)
+```
+
+## 6. Pull the radial tree through the same frontier
+
+At frontier `k`, a deeper point is placed on its ancestor at depth `k`. Between
+`k` and `k + 1`, only the next ring moves from ancestor coordinates toward its
+canonical points. The visual result is a set of branches being pulled out of
+their parent rather than appearing from unrelated locations.
+
+The cone and radial layouts share reveal values and visible IDs. There is no
+second radial collapse state to become stale.
+
+## 7. Project the cone camera back onto the circle
+
+After cone layout, the camera transform and canvas size define a world-space
+rectangle. A card belongs to the projection window when its layout rectangle
+intersects that world rectangle. This produces an exact discrete ID set after
+every pan, zoom, resize, or frontier change.
+
+The radial view converts the minimum and maximum member depths to annular ring
+boundaries and the ordered member angles to a sector envelope. Geometry makes
+the viewfinder legible; the discrete set remains authoritative. Radial nodes
+and edges outside that set are hidden, so the points shown by the radial
+viewfinder are exactly the cards currently present in the cone viewport.
+
+## Complexity
+
+Indexing and each coordinate pass use linear-size storage. Boundary gap lookup
+walks parent chains, so worst-case layout time is `O(N × D)` for `N` nodes and
+depth `D`; configured depth is capped at 64. Only lower, upper, and canonical
+sets are produced for a request—there is no cache of every possible level.
+
+The React layer keeps the topology mounted so frontier motion preserves node
+identity, while opacity and pointer eligibility expose the current prefix. At
+1,000 nodes, consumer renderer complexity and label density become the dominant
+costs.

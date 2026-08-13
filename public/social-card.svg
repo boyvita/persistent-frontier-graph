@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-labelledby="title description">
+  <title id="title">Persistent Frontier Graph</title>
+  <desc id="description">One tree with synchronized cone and radial projections, by Vitaly Boytsov.</desc>
+  <rect width="1200" height="630" fill="#090c13"/>
+  <path d="M0 525C250 430 440 560 690 460s333-77 510-7v177H0Z" fill="#0d1420"/>
+  <g fill="none" stroke="#213044">
+    <circle cx="942" cy="315" r="85"/>
+    <circle cx="942" cy="315" r="155"/>
+    <circle cx="942" cy="315" r="225"/>
+    <path d="M690 315h504M942 62v506" stroke-dasharray="5 8"/>
+  </g>
+  <g fill="#bafc4a">
+    <circle cx="942" cy="315" r="9"/>
+    <circle cx="1035" cy="252" r="6"/>
+    <circle cx="840" cy="412" r="6"/>
+    <circle cx="1080" cy="425" r="6"/>
+  </g>
+  <g fill="#71d7ff">
+    <circle cx="960" cy="160" r="5"/>
+    <circle cx="747" cy="240" r="5"/>
+    <circle cx="1157" cy="335" r="5"/>
+  </g>
+  <g font-family="Arial, Helvetica, sans-serif">
+    <text x="74" y="95" fill="#bafc4a" font-size="22" font-weight="700" letter-spacing="4">OPEN-SOURCE REACT LAYOUT ENGINE</text>
+    <text x="70" y="220" fill="#f5f7fa" font-size="76" font-weight="600" letter-spacing="-5">Persistent</text>
+    <text x="70" y="300" fill="#bafc4a" font-size="76" font-weight="600" letter-spacing="-5">frontier</text>
+    <text x="70" y="380" fill="#f5f7fa" font-size="76" font-weight="600" letter-spacing="-5">graph.</text>
+    <text x="75" y="455" fill="#9ca6b6" font-size="25">One tree. Two synchronized projections.</text>
+    <text x="75" y="555" fill="#f5f7fa" font-size="21">Vitaly Boytsov · @boyvita</text>
+  </g>
+</svg>

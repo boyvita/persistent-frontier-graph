@@ -1,0 +1,32 @@
+name: Feature request
+description: Propose a reusable capability or documented behavior change.
+title: "feature: "
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What reusable tree-exploration problem is currently unsolved?
+    validations:
+      required: true
+  - type: textarea
+    id: behavior
+    attributes:
+      label: Proposed behavior
+      description: Include frontier semantics, interaction lifecycle, and expected failure behavior where relevant.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+    validations:
+      required: true
+  - type: checkboxes
+    id: boundary
+    attributes:
+      label: Library boundary
+      options:
+        - label: This proposal is reusable and does not require built-in data editing, persistence, or domain color policy.
+          required: true

@@ -1,0 +1,49 @@
+name: Bug report
+description: Report a reproducible defect in layout, interaction, or packaging.
+title: "bug: "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: Please remove private data and reduce the tree to the smallest useful reproduction.
+  - type: textarea
+    id: observed
+    attributes:
+      label: Observed behavior
+      description: What happened, and in which view/frontier state?
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Minimal reproduction
+      description: Link or paste tree options/data and the exact frontier value.
+    validations:
+      required: true
+  - type: input
+    id: commit
+    attributes:
+      label: Installed commit
+      placeholder: Full Git commit SHA
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      placeholder: Browser, React version, operating system
+    validations:
+      required: true
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checks
+      options:
+        - label: I searched existing issues and removed secrets or private data.
+          required: true

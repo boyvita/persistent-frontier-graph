@@ -1,0 +1,367 @@
+:root {
+  --pfg-ink: #f7f8fb;
+  --pfg-muted: #9199aa;
+  --pfg-line: rgba(181, 193, 215, 0.2);
+  --pfg-panel: #111620;
+  --pfg-accent: #bafc4a;
+  --pfg-accent-2: #71d7ff;
+}
+
+.pfg-graph,
+.pfg-graph * {
+  box-sizing: border-box;
+}
+
+.pfg-graph {
+  color: var(--pfg-ink);
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.pfg-graph__views {
+  display: grid;
+  gap: 1px;
+  grid-template-columns: minmax(0, 1.45fr) minmax(19rem, 0.75fr);
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 1.4rem 1.4rem 0 0;
+}
+
+.pfg-viewport {
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.018) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.018) 1px, transparent 1px),
+    #0b0f17;
+  background-size: 28px 28px;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.pfg-viewport__header {
+  align-items: center;
+  background: rgba(9, 12, 19, 0.86);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  height: 4.2rem;
+  justify-content: space-between;
+  padding: 0 1rem 0 1.2rem;
+  position: relative;
+  z-index: 3;
+}
+
+.pfg-viewport__header > div:first-child {
+  display: grid;
+  gap: 0.1rem;
+}
+
+.pfg-viewport__header strong {
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.pfg-viewport__header span {
+  color: var(--pfg-muted);
+  font-size: 0.7rem;
+}
+
+.pfg-camera-controls {
+  align-items: center;
+  display: flex;
+  gap: 0.25rem;
+}
+
+.pfg-camera-controls button,
+.pfg-selection button {
+  background: #171d29;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 0.45rem;
+  color: var(--pfg-ink);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.72rem;
+  min-height: 1.9rem;
+  min-width: 1.9rem;
+  padding: 0.35rem 0.55rem;
+}
+
+.pfg-camera-controls button:hover,
+.pfg-selection button:hover {
+  background: #222b3a;
+}
+
+.pfg-camera-controls button:focus-visible,
+.pfg-selection button:focus-visible,
+.pfg-node:focus-visible {
+  outline: 3px solid var(--pfg-accent-2);
+  outline-offset: 3px;
+}
+
+.pfg-camera-controls output {
+  color: var(--pfg-muted);
+  font-size: 0.68rem;
+  min-width: 2.7rem;
+  text-align: center;
+}
+
+.pfg-viewport__canvas {
+  cursor: grab;
+  height: 34rem;
+  overflow: hidden;
+  position: relative;
+  touch-action: none;
+}
+
+.pfg-viewport__canvas.is-dragging {
+  cursor: grabbing;
+}
+
+.pfg-scene {
+  height: 0;
+  left: 0;
+  position: absolute;
+  top: 0;
+  transform-origin: 0 0;
+  transition: transform 180ms cubic-bezier(0.2, 0.9, 0.2, 1);
+  width: 0;
+  will-change: transform;
+}
+
+.pfg-viewport__canvas.is-dragging .pfg-scene {
+  transition: none;
+}
+
+.pfg-edges {
+  height: 1px;
+  left: 0;
+  overflow: visible;
+  position: absolute;
+  top: 0;
+  width: 1px;
+}
+
+.pfg-overlay {
+  left: 0;
+  pointer-events: none;
+  position: absolute;
+  top: 0;
+}
+
+.pfg-edges path {
+  fill: none;
+  stroke: var(--pfg-line);
+  stroke-linecap: round;
+  stroke-width: 1.5;
+  transition: d 420ms cubic-bezier(0.2, 0.9, 0.2, 1), opacity 260ms ease;
+  vector-effect: non-scaling-stroke;
+}
+
+.pfg-edges .pfg-projection-sector {
+  fill: rgba(186, 252, 74, 0.09);
+  stroke: rgba(186, 252, 74, 0.7);
+  stroke-dasharray: 7 6;
+  stroke-width: 1.5;
+  vector-effect: non-scaling-stroke;
+}
+
+.pfg-node--radial[data-in-projection-window="false"] {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.pfg-node--radial[data-in-projection-window="true"] {
+  box-shadow: 0 0 0 3px rgba(186, 252, 74, 0.12);
+}
+
+.pfg-node {
+  align-items: center;
+  appearance: none;
+  background: #161c27;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  color: var(--pfg-ink);
+  cursor: pointer;
+  display: flex;
+  font: inherit;
+  justify-content: flex-start;
+  left: 0;
+  line-height: 1.2;
+  position: absolute;
+  top: 0;
+  transition:
+    transform 420ms cubic-bezier(0.2, 0.9, 0.2, 1),
+    opacity 260ms ease,
+    border-color 160ms ease,
+    background 160ms ease;
+  will-change: transform;
+}
+
+.pfg-sr-only {
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  height: 1px;
+  overflow: hidden;
+  position: absolute;
+  white-space: nowrap;
+  width: 1px;
+}
+
+.pfg-node--cone {
+  border-radius: 0.7rem;
+  font-size: 0.78rem;
+  height: 4rem;
+  overflow: hidden;
+  padding: 0.7rem 0.85rem;
+  text-align: left;
+  width: 13rem;
+}
+
+.pfg-node--radial {
+  background: #d9e1ef;
+  border: 3px solid #0b0f17;
+  border-radius: 999px;
+  color: transparent;
+  height: 0.9rem;
+  justify-content: center;
+  overflow: visible;
+  padding: 0;
+  width: 0.9rem;
+}
+
+.pfg-node--radial > span {
+  background: rgba(11, 15, 23, 0.94);
+  border-radius: 0.25rem;
+  color: #eef2f8;
+  font-size: 0.64rem;
+  left: 0.8rem;
+  max-width: 7.5rem;
+  overflow: hidden;
+  pointer-events: none;
+  position: absolute;
+  padding: 0.12rem 0.25rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pfg-node.is-frontier {
+  border-color: rgba(186, 252, 74, 0.7);
+}
+
+.pfg-node.is-selected {
+  background: #263319;
+  border-color: var(--pfg-accent);
+  box-shadow: 0 0 0 4px rgba(186, 252, 74, 0.12);
+}
+
+.pfg-node--radial.is-selected {
+  background: var(--pfg-accent);
+  height: 1.15rem;
+  width: 1.15rem;
+}
+
+.pfg-selection {
+  align-items: center;
+  background: #0f141e;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0 0 1.4rem 1.4rem;
+  border-top: 0;
+  display: flex;
+  justify-content: space-between;
+  min-height: 4rem;
+  padding: 0.8rem 1.1rem;
+}
+
+.pfg-selection__summary {
+  align-items: baseline;
+  display: flex;
+  gap: 0.65rem;
+}
+
+.pfg-node-navigator {
+  align-items: center;
+  display: flex;
+  gap: 0.6rem;
+}
+
+.pfg-node-navigator select {
+  background: #171d29;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 0.45rem;
+  color: var(--pfg-ink);
+  font: inherit;
+  font-size: 0.72rem;
+  max-width: 14rem;
+  min-height: 2rem;
+  padding: 0.35rem 0.55rem;
+}
+
+.pfg-node-navigator select:focus-visible {
+  outline: 3px solid var(--pfg-accent-2);
+  outline-offset: 3px;
+}
+
+.pfg-selection span,
+.pfg-selection small {
+  color: var(--pfg-muted);
+  font-size: 0.72rem;
+}
+
+.pfg-selection strong {
+  font-size: 0.82rem;
+}
+
+.pfg-selection__actions {
+  display: flex;
+  gap: 0.45rem;
+}
+
+.pfg-error {
+  background: #2d1718;
+  border: 1px solid #7d383b;
+  border-radius: 0.8rem;
+  color: #ffd9da;
+  display: grid;
+  gap: 0.35rem;
+  padding: 1rem;
+}
+
+.pfg-error span {
+  font-size: 0.8rem;
+}
+
+@media (max-width: 900px) {
+  .pfg-graph__views {
+    grid-template-columns: 1fr;
+  }
+
+  .pfg-viewport__canvas {
+    height: 28rem;
+  }
+
+  .pfg-selection {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 0.85rem;
+  }
+
+  .pfg-node-navigator {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .pfg-node-navigator select {
+    max-width: none;
+    width: 100%;
+  }
+
+  .pfg-selection__actions {
+    flex-wrap: wrap;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pfg-scene,
+  .pfg-node,
+  .pfg-edges path {
+    transition: none;
+  }
+}

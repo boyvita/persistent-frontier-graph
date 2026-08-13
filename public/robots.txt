@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://boyvita.github.io/persistent-frontier-graph/sitemap.xml

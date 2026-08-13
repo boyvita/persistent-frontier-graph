@@ -1,0 +1,262 @@
+# Persistent Frontier Graph specification
+
+This document defines the observable version `0.1` contract. Normative terms
+**MUST**, **SHOULD**, and **MAY** have their usual standards meaning.
+
+## 1. Purpose and scope
+
+The library presents one immutable rooted tree through two synchronized views:
+
+1. a cone projection with hierarchy depth on the horizontal axis;
+2. a radial projection with hierarchy depth on concentric rings.
+
+A controlled fractional `frontier` determines the revealed hierarchy depth in
+both views. The library provides generation, validation, headless layout, React
+presentation, and extension contracts.
+
+The following are explicit non-goals:
+
+- adding, deleting, renaming, or persisting application nodes;
+- changing node colors through built-in controls;
+- force-directed or cyclic general-graph layout;
+- application permissions, collaboration, or backend storage;
+- npm registry publication.
+
+## 2. Tree contract
+
+`FrontierTree<TData>` MUST contain:
+
+- a non-empty `revision` chosen by its producer;
+- exactly one `rootId`;
+- nodes with unique string IDs, one `parentId`, optional finite numeric `order`,
+  and consumer-owned `data`.
+
+The root MUST exist and have `parentId: null`. Every other node MUST reference
+an existing parent. The structure MUST be acyclic and every node MUST be
+reachable from the root.
+Siblings with explicit `order` are sorted numerically, before unordered
+siblings; ties and unordered siblings use stable natural ID order.
+
+`validateTree` reports all discoverable structural issues before layout.
+`indexTree` throws `InvalidTreeError` for invalid input. A React component MUST
+render an accessible error instead of a partial graph and MUST invoke `onError`
+when supplied.
+
+Inputs are treated as immutable. Mutating an object under an unchanged
+reference is unsupported.
+
+## 3. Generator
+
+### 3.1 Inputs
+
+`generateTree` accepts six options:
+
+| Field | Valid values |
+|---|---|
+| `nodeCount` | integer `1…1000` |
+| `maxBranches` | integer `1…64` |
+| `maxDepth` | integer `0…64` |
+| `breadthDepthBias` | finite number `0…1` |
+| `uniform` | boolean |
+| `seed` | string or number |
+
+The capacity before the 1,000-node product ceiling is
+`Σ(maxBranches^depth)` for `depth = 0…maxDepth`. If `nodeCount` exceeds this
+capacity, generation MUST return `capacity_exceeded`. It MUST NOT lower the
+requested count or violate a structural limit.
+
+### 3.2 Direction
+
+At every insertion, a stable sample derived from the seed selects shallow or
+deep preference:
+
+- bias `0` always prefers the shallowest eligible parents and therefore width;
+- bias `1` always prefers the deepest eligible parents and therefore length;
+- intermediate values select deep preference with that probability.
+
+### 3.3 Uniform mode
+
+When `uniform` is true, the generator MUST deterministically:
+
+1. prefer the least populated root-level subtree;
+2. apply the direction preference to tied candidates;
+3. prefer the candidate with fewer direct children;
+4. use a stable seeded tie-break.
+
+This balances root subtrees while allowing the bias to choose whether each
+subtree expands by width or length.
+
+### 3.4 Random mode
+
+When `uniform` is false, the generator MUST choose an eligible parent through a
+seeded weighted random distribution. The weight combines requested direction,
+candidate depth, and remaining child slots. The output MUST still obey exact
+count, branching, and depth limits.
+
+The same options and seed MUST produce equal IDs, parents, data-factory
+contexts, and revision. A new seed MAY produce a different valid tree.
+The generated revision is a deterministic structural token; custom data-factory
+output is not hashed. A consumer that binds actions to data freshness MUST
+replace it with the owning document revision.
+
+### 3.5 Regeneration
+
+Regeneration is an application transaction. The demo creates a fresh seed,
+builds a complete candidate, and replaces the current tree only after success.
+On failure, the previous valid graph remains visible and the error is announced.
+Selection and frontier reset with a successful new tree.
+
+## 4. Frontier
+
+For maximum hierarchy depth `D`, requested frontier `F` is clamped to `[0,D]`.
+Define:
+
+- `L = floor(F)`;
+- `U = ceil(F)`;
+- `α = F - L`.
+
+Nodes at depth `≤ L` have reveal `1`. Nodes at depth `U` have reveal `α` when
+`U > L`. Deeper nodes have reveal `0`. Terminal nodes shall remain terminal at
+their actual shallow depth.
+
+A node or edge is revealed exactly when its reveal value is greater than zero.
+Implementations MUST NOT apply different display, viewport, or snapshot epsilon
+thresholds to positive fractional reveals.
+
+The shared snapshot MUST contain the frontier, lower and upper levels,
+per-node reveal, the nearest ancestor at depth `L`, visible IDs, and frontier
+IDs. Both layouts MUST use the same snapshot instance for a model derivation.
+
+## 5. Cone layout
+
+### 5.1 Stable depth
+
+Every node at hierarchy depth `d` MUST have horizontal center
+`d × (nodeWidth + columnGap)`. Frontier changes MUST NOT change that column.
+
+### 5.2 Complete coordinate sets
+
+For each integer level used by a projection:
+
+1. the boundary contains every terminal node encountered before that level and
+   every node at the level;
+2. boundary order follows deterministic depth-first sibling order;
+3. adjacent boundary nodes receive the local gap plus a bounded increment for
+   generations since their lowest common ancestor;
+4. every parent center is the midpoint of the minimum and maximum child center;
+5. a deeper descendant inherits the vertical center of its boundary ancestor.
+
+This preserves contiguous subtrees and prevents sibling interleaving.
+
+### 5.3 Fractional motion
+
+The final cone coordinate at `F` MUST linearly interpolate the complete sets at
+`L` and `U` using `α`. Independent per-node repacking is forbidden.
+All topology nodes and containment edges MUST remain mounted across frontier
+changes; reveal and viewport membership affect opacity and interaction, not
+identity or component keys.
+
+## 6. Radial layout
+
+Canonical leaf angles MUST preserve the same deterministic subtree order.
+Every parent angle is the midpoint of its extreme child angles. All nodes at
+one hierarchy depth share a ring.
+
+For each depth, radius MUST be at least:
+
+- the previous radius plus `minimumRingGap`; and
+- `nodesAtDepth × nodePitch / 2π`.
+
+At an integer frontier, descendants deeper than `L` MUST occupy their nearest
+frontier ancestor's point. At a fractional frontier, nodes at `U` MUST
+interpolate from that ancestor point to their canonical point using `α`.
+Deeper nodes remain collapsed. This is the radial “pull” visualization.
+
+## 7. Synchronization and state ownership
+
+The immutable tree and controlled frontier are structural authorities.
+Selection is controlled or locally managed by the composite React component.
+View cameras are ephemeral state and MUST NOT mutate the tree or frontier. The
+radial camera remains independently pannable and zoomable, but radial sector
+membership is authoritative from the cone camera.
+
+The cone and radial views MUST agree on frontier-revealed node IDs in one React
+commit. In addition, the cone camera MUST derive the exact set of revealed
+cards whose rectangles intersect its current viewport. The radial annular
+sector MUST receive that set in the same composite render and MUST show only
+its members; this is the projection-viewfinder contract. The sector geometry
+is the polar envelope of the exact discrete membership set.
+
+Changing selection in either visual canvas or the accessible navigator MUST
+update the shared selected node. If frontier reduction hides the selection,
+the nearest visible frontier ancestor becomes the effective selection.
+
+## 8. Extensibility
+
+The library MUST expose typed hooks for:
+
+- node content;
+- edge appearance;
+- read-only overlays;
+- node actions carrying the exact producer-owned tree revision token;
+- accessible application labels;
+- headless validation, generation, snapshots, layout, viewport, and sector derivation.
+
+An extension receives read-only snapshots and narrow callbacks. It MUST NOT be
+given a hidden mutable node registry. Consumer renderers are trusted
+application code, not a sandbox.
+
+## 9. Interaction and accessibility
+
+Both views MUST provide pointer pan, cursor-anchored wheel zoom, button-based
+zoom, and fit reset. Visual nodes MAY be densely packed below pointer target
+minimums; therefore the composite component MUST also expose a native keyboard
+node navigator with the same visible set and selection.
+
+Controls require programmatic names, visible focus, non-color state cues, and
+WCAG AA contrast. `prefers-reduced-motion` MUST remove non-essential layout
+transitions. Automated browser checks supplement, but do not replace, manual
+keyboard and assistive-technology review.
+
+## 10. Performance and failure behavior
+
+Traversal MUST be iterative where user-controlled depth could exhaust the call
+stack. Derived state and layout MUST not mutate input. The default supported
+generator ceiling is 1,000 nodes.
+
+Generation and validation errors are typed. Invalid application trees do not
+render partially. A custom renderer exception remains consumer responsibility;
+applications SHOULD wrap untrusted renderers in their own error boundary.
+
+## 11. Acceptance criteria
+
+- **GEN-01:** Every feasible option set returns exactly `nodeCount` unique nodes
+  within branching and depth bounds.
+- **GEN-02:** Equal options and seed return equal trees; different seeds can be
+  replayed independently.
+- **GEN-03:** Impossible capacity returns `capacity_exceeded` without a partial
+  result.
+- **GEN-04:** Bias `0` produces a lower mean depth than bias `1` for the canonical
+  uniform fixture.
+- **TREE-01:** Duplicate IDs, missing roots, unknown parents, self-parenting,
+  cycles, and disconnected structures are rejected.
+- **LAYOUT-01:** Cone X is true depth at every frontier.
+- **LAYOUT-02:** Every visible parent is centered on its extreme children.
+- **LAYOUT-03:** Fractional cone coordinates equal interpolation of adjacent
+  complete coordinate sets.
+- **RADIAL-01:** Unrevealed descendants coincide with their frontier ancestor;
+  the next ring moves continuously toward canonical points.
+- **SYNC-01:** Both layout projections use the exact same frontier-revealed ID set.
+- **VIEWPORT-01:** At every cone pan, zoom, resize, and frontier change, radial
+  sector membership equals the exact set of revealed cone cards intersecting
+  the cone viewport.
+- **EXT-01:** Custom renderers, edge appearance, overlays, labels, actions, and
+  headless APIs work without changing the core tree.
+- **A11Y-01:** The full demo passes automated WCAG 2.2 AA checks and supports
+  keyboard zoom, selection, and native node navigation.
+- **PERF-01:** The headless model returns 1,000 cone and 1,000 radial nodes under
+  the bounded test budget.
+- **DIST-01:** Strict typecheck, lint, unit/component/browser tests, demo/library
+  builds, and package dry run pass from a clean install.
+- **NON-GOAL-01:** No built-in control adds nodes, edits node data, or changes
+  node colors.
