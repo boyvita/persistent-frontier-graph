@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type ChangeEvent, type CSSProperties } from "react";
+import { useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
 import {
   PersistentFrontierGraph,
   generateTree,
@@ -215,13 +215,16 @@ export function App() {
       </nav>
 
       <main id="main-content">
-        <section className="top-generator" id="top" aria-labelledby="generator-title">
-          <div className="top-generator__heading">
-            <span className="kicker">Live generator · four structural parameters</span>
-            <h2 id="generator-title">Shape the tree before you read the story.</h2>
-            <p>Set its width, depth, growth direction, and exact size. Keep sibling growth even or let the seed choose.</p>
-          </div>
-          <div id="generator">
+        <section className="demo-section demo-section--lead" id="demo" aria-labelledby="demo-title">
+          <header className="demo-intro" id="top">
+            <div>
+              <h1 id="demo-title">Persistent Frontier Graph</h1>
+              <p>A practical React library for exploring one tree as a cone and a radial projection. Adjust the controls and use it in your own interface.</p>
+            </div>
+            <a className="button button--small" href="https://github.com/boyvita/persistent-frontier-graph">GitHub ↗</a>
+          </header>
+
+          <div className="demo-controls" id="generator">
             <GeneratorPanel
               capacity={capacity}
               draft={draft}
@@ -229,61 +232,22 @@ export function App() {
               onRegenerate={regenerate}
               onUpdate={(patch) => setDraft((current) => ({ ...current, ...patch }))}
             />
-          </div>
-        </section>
-
-        <section className="hero">
-          <div className="hero__copy">
-            <span className="kicker">Open-source React layout engine · v0.1</span>
-            <h1>Keep the <em>frontier</em>.<br />Lose the graph anxiety.</h1>
-            <p>
-              A tree can be circular, linear, dense, or deep—and still feel like the same place.
-              Persistent Frontier Graph keeps every subtree ordered while one continuous depth state
-              drives a cone projection and its radial companion.
-            </p>
-            <div className="hero__actions">
-              <a className="button button--primary" href="#generator">Build a graph</a>
-              <a className="button" href="https://github.com/boyvita/persistent-frontier-graph">View source</a>
+            <div className="frontier-control">
+              <div>
+                <span>VISIBLE FRONTIER</span>
+                <strong>{frontier.toFixed(1)} <small>/ {index.maximumDepth}</small></strong>
+              </div>
+              <input
+                aria-label="Visible frontier depth"
+                max={index.maximumDepth}
+                min="0"
+                onChange={(event) => setFrontier(Number(event.target.value))}
+                step="0.1"
+                type="range"
+                value={frontier}
+              />
+              <button className="button button--small" disabled={isReplaying} onClick={replay} type="button">{isReplaying ? "Revealing…" : "Replay pull"}</button>
             </div>
-            <div className="hero__meta">
-              <span><strong>1,000</strong> nodes</span>
-              <span><strong>2</strong> projections</span>
-              <span><strong>0</strong> hidden state stores</span>
-            </div>
-          </div>
-          <div className="hero__diagram" aria-hidden="true">
-            <span className="orbit orbit--one" />
-            <span className="orbit orbit--two" />
-            <span className="orbit orbit--three" />
-            <span className="hero-node hero-node--root" />
-            {Array.from({ length: 14 }, (_, position) => (
-              <span className="hero-node" key={position} style={{ "--index": position } as CSSProperties} />
-            ))}
-            <div className="hero__caption"><span>One hierarchy</span><strong>Continuous coordinates</strong></div>
-          </div>
-        </section>
-
-        <section className="demo-section" id="demo">
-          <div className="section-heading section-heading--demo">
-            <div><span className="section-index">01 / PLAYGROUND</span><h2>Watch the generated tree.<br />See its frontier breathe.</h2></div>
-            <p>The four controls above define the structure. Here one fractional frontier and one exact camera window drive both projections.</p>
-          </div>
-
-          <div className="frontier-control">
-            <div>
-              <span>VISIBLE FRONTIER</span>
-              <strong>{frontier.toFixed(1)} <small>/ {index.maximumDepth}</small></strong>
-            </div>
-            <input
-              aria-label="Visible frontier depth"
-              max={index.maximumDepth}
-              min="0"
-              onChange={(event) => setFrontier(Number(event.target.value))}
-              step="0.1"
-              type="range"
-              value={frontier}
-            />
-            <button className="button button--small" disabled={isReplaying} onClick={replay} type="button">{isReplaying ? "Revealing…" : "Replay pull"}</button>
           </div>
 
           <PersistentFrontierGraph
@@ -301,7 +265,7 @@ export function App() {
 
         <section className="mechanics" id="mechanics">
           <div className="section-heading">
-            <div><span className="section-index">02 / MECHANICS</span><h2>A stable mental model<br />at every zoom level.</h2></div>
+            <div><span className="section-index">01 / MECHANICS</span><h2>How it works</h2></div>
             <p>The layout is deterministic geometry, not a force simulation. The graph never forgets subtree order or hierarchy depth.</p>
           </div>
           <div className="mechanics-grid">
@@ -328,7 +292,7 @@ export function App() {
 
         <section className="api-section" id="api">
           <div className="section-heading">
-            <div><span className="section-index">03 / EXTEND</span><h2>Your data.<br />Your visual language.</h2></div>
+            <div><span className="section-index">02 / EXTEND</span><h2>Use your data and components</h2></div>
             <p>The library owns geometry, validation, and synchronization. You own node content, actions, edge treatment, overlays, selection, and composition.</p>
           </div>
           <div className="api-grid">
@@ -368,10 +332,10 @@ if (!result.ok) throw new Error(result.error.message);
         </section>
 
         <section className="closing">
-          <span>BUILT IN THE OPEN</span>
-          <h2>Graphs should reveal complexity—<br />not create more of it.</h2>
-          <p>Persistent Frontier Graph is designed and maintained by <a href="https://github.com/boyvita">Vitaly Boytsov · @boyvita</a>.</p>
-          <div><a className="button button--primary" href="https://github.com/boyvita/persistent-frontier-graph">Star on GitHub ★</a><a className="button" href="https://github.com/boyvita/persistent-frontier-graph/blob/main/docs/specification.md">Read the specification</a></div>
+          <span>OPEN SOURCE</span>
+          <h2>Use it in your project</h2>
+          <p>MIT licensed and maintained by <a href="https://github.com/boyvita">Vitaly Boytsov · @boyvita</a>.</p>
+          <div><a className="button button--primary" href="https://github.com/boyvita/persistent-frontier-graph">View on GitHub</a><a className="button" href="https://github.com/boyvita/persistent-frontier-graph/blob/main/docs/specification.md">Read the specification</a></div>
         </section>
       </main>
 

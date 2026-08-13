@@ -6,17 +6,18 @@ test.beforeEach(async ({ page }) => {
   await expect(page).toHaveTitle(/Persistent Frontier Graph/);
 });
 
-test("places the graph generator in the first viewport", async ({ page }) => {
+test("opens with the controls and live visualization", async ({ page }) => {
   const generator = page.locator("#generator");
   const bounds = await generator.boundingBox();
   const viewport = page.viewportSize();
   if (!bounds || !viewport) throw new Error("The generator or viewport is not measurable.");
   expect(bounds.y).toBeLessThan(viewport.height);
   await expect(page.getByLabel("Maximum branches")).toBeInViewport();
+  await expect(page.getByRole("region", { name: "Persistent frontier cone projection" })).toBeInViewport();
+  await expect(page.getByText("Keep the frontier", { exact: false })).toHaveCount(0);
 });
 
 test("generates a bounded tree and keeps both views synchronized", async ({ page }) => {
-  await page.getByRole("link", { name: "Build a graph" }).click();
   const cone = page.getByRole("region", { name: "Persistent frontier cone projection" });
   const radial = page.getByRole("region", { name: "Synchronized radial tree" });
   const frontier = page.getByRole("slider", { name: "Visible frontier depth" });
