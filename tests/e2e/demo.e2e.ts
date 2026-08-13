@@ -173,6 +173,10 @@ test("supports keyboard camera and node controls", async ({ page }) => {
   await navigator.selectOption("node-0001");
   await expect(navigator).toHaveValue("node-0001");
   await expect(page.getByText("node-0001", { exact: true })).toBeVisible();
+
+  const codeSample = page.getByLabel("Persistent Frontier Graph React example");
+  await codeSample.focus();
+  await expect(codeSample).toBeFocused();
 });
 
 test("selects a demo node exactly once through custom rendered content", async ({ page }) => {

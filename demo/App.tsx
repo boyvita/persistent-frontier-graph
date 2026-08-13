@@ -334,7 +334,7 @@ export function App() {
           <div className="api-grid">
             <div className="code-card">
               <header><span /><span /><span /><strong>example.tsx</strong></header>
-              <pre><code>{`import {
+              <pre aria-label="Persistent Frontier Graph React example" tabIndex={0}><code>{`import {
   PersistentFrontierGraph,
   generateTree
 } from "persistent-frontier-graph";
