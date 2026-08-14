@@ -143,3 +143,17 @@ the dominant costs.
 The committed camera state is also the painted state. Position changes do not
 run through a second CSS transform tween, because that would make hit testing
 and cursor anchoring observe different coordinate frames.
+
+## Interaction motion
+
+Wheel, drag, and button targets feed one request-animation-frame loop. Two
+low-pass stages preserve velocity while repeated events replace the live target
+without restarting from an older endpoint. Before publishing a candidate, the
+loop projects every currently or newly visible card corner into screen space.
+If any corner would exceed the per-frame pixel budget, it backs off the camera
+interpolation ratio and verifies the resulting geometry again.
+
+Pointer release cancels the remaining target and retains the last committed
+camera. A new gesture therefore starts from what the user actually sees. At
+the complete overview boundary, cursor anchoring yields to the centered Fit
+camera so no stale vertical offset survives a saturated zoom-out gesture.

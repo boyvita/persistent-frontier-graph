@@ -123,10 +123,11 @@ The complete contract lives in the [API reference](docs/api.md).
 
 The visual canvases support direct card or background drag, cursor-anchored
 wheel navigation, responsive fit, and zoom buttons. Wheel gestures are captured
-inside a canvas instead of scrolling the document. The bundled component keeps the cone and radial canvases
-at an equal 50/50 width across zoom and responsive viewport changes. The
-composite derives the cone camera's exact
-card-intersection set before rendering either view; the radial annular sector
+inside a canvas instead of scrolling the document. Retargetable frame-bounded
+motion keeps the painted cards and gesture state in one coordinate frame. The
+bundled component keeps the cone and radial canvases at an equal 50/50 width
+across zoom and responsive viewport changes. The composite derives the cone
+camera's exact card-intersection set before rendering either view; the radial annular sector
 shows only that set while the camera-derived frontier controls coordinate
 collapse and pull motion. Every topology node remains mounted. A synchronized native node
 navigator provides a keyboard and assistive-technology equivalent even when

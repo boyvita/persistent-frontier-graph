@@ -15,6 +15,9 @@ versioning after its first tagged release.
   and synchronize the radial pull/viewfinder in the same render.
 - Port fixed-anchor wheel sessions, direct card dragging, bounded terminal
   camera motion, and post-drag click suppression from the source implementation.
+- Restore the source rAF motion filter, live gesture retargeting, painted-frame
+  release behavior, and canonical overview reset.
+- Coalesce radial camera updates per frame and restore three-band point focus.
 
 ## 0.1.0 - 2026-08-13
 

@@ -20,6 +20,8 @@ interface WheelSession {
 
 const DRAG_THRESHOLD = 3;
 const WHEEL_SESSION_IDLE_MS = 120;
+const MIN_ZOOM = 0.08;
+const MAX_ZOOM = 5;
 
 export interface PannableViewport {
   readonly handlers: {
@@ -30,6 +32,7 @@ export interface PannableViewport {
   };
   readonly onWheel: (event: globalThis.WheelEvent) => void;
   readonly isDragging: boolean;
+  readonly moveTo: (viewport: ViewportState) => void;
   readonly reset: () => void;
   readonly shouldSuppressClick: () => boolean;
   readonly viewport: ViewportState;
@@ -43,22 +46,32 @@ export function usePannableViewport(
 ): PannableViewport {
   const [isDragging, setIsDragging] = useState(false);
   const drag = useRef<DragState | null>(null);
+  const cameraFrame = useRef<number | null>(null);
+  const pendingViewport = useRef<ViewportState | null>(null);
   const suppressClick = useRef(false);
   const viewportRef = useRef(viewport);
   const wheelSession = useRef<WheelSession | null>(null);
 
   useLayoutEffect(() => {
-    viewportRef.current = viewport;
+    if (cameraFrame.current === null) viewportRef.current = viewport;
   }, [viewport]);
 
   useLayoutEffect(() => () => {
     const timerId = wheelSession.current?.timerId;
     if (timerId !== null && timerId !== undefined) window.clearTimeout(timerId);
+    if (cameraFrame.current !== null) window.cancelAnimationFrame(cameraFrame.current);
   }, []);
 
   const commit = useCallback((next: ViewportState) => {
     viewportRef.current = next;
-    onViewportChange(next);
+    pendingViewport.current = next;
+    if (cameraFrame.current !== null) return;
+    cameraFrame.current = window.requestAnimationFrame(() => {
+      cameraFrame.current = null;
+      const pending = pendingViewport.current;
+      pendingViewport.current = null;
+      if (pending) onViewportChange(pending);
+    });
   }, [onViewportChange]);
 
   const onPointerDown = useCallback((event: PointerEvent<HTMLElement>) => {
@@ -101,6 +114,7 @@ export function usePannableViewport(
 
   const onWheel = useCallback((event: globalThis.WheelEvent) => {
     event.preventDefault();
+    event.stopPropagation();
     const element = event.currentTarget as HTMLElement | null;
     if (!element) return;
     const bounds = element.getBoundingClientRect();
@@ -122,7 +136,7 @@ export function usePannableViewport(
     active.timerId = window.setTimeout(() => {
       if (wheelSession.current === active) wheelSession.current = null;
     }, WHEEL_SESSION_IDLE_MS);
-    const nextZoom = Math.min(2.8, Math.max(0.08, active.start.zoom * Math.exp(-active.totalDelta * 0.0015)));
+    const nextZoom = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, active.start.zoom * Math.exp(-active.totalDelta * 0.0015)));
     const ratio = nextZoom / active.start.zoom;
     commit({
       x: active.anchorX - (active.anchorX - active.start.x) * ratio,
@@ -133,9 +147,10 @@ export function usePannableViewport(
 
   const zoomBy = useCallback((factor: number) => {
     const current = viewportRef.current;
-    commit({ ...current, zoom: Math.min(2.8, Math.max(0.08, current.zoom * factor)) });
+    commit({ ...current, zoom: Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, current.zoom * factor)) });
   }, [commit]);
 
+  const moveTo = useCallback((next: ViewportState) => commit(next), [commit]);
   const reset = useCallback(() => commit(homeViewport), [commit, homeViewport]);
   const shouldSuppressClick = useCallback(() => {
     const suppressed = suppressClick.current;
@@ -150,6 +165,7 @@ export function usePannableViewport(
       onPointerUp: stopDrag,
     },
     isDragging,
+    moveTo,
     onWheel,
     reset,
     shouldSuppressClick,

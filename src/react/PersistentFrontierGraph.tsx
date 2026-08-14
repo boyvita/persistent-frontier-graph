@@ -194,6 +194,7 @@ export function PersistentFrontierGraph<TData>({
     setRadialCamera({ revision: tree.revision, viewport });
   }, [tree.revision]);
   const coneController = useConeProjectionViewport({
+    authorityKey: tree.revision,
     camera: coneCamera,
     depthSlot,
     getLayout: getConeLayout,
@@ -256,6 +257,27 @@ export function PersistentFrontierGraph<TData>({
     if (controlledSelectedId === undefined) setLocalSelectedId(id);
     onSelectedIdChange?.(id);
   };
+  const selectRadial = (id: NodeId) => {
+    select(id);
+    const projected = model.radial.nodes.find((node) => node.node.id === id);
+    if (!projected) return;
+    const innerDepth = Math.max(0, projected.depth - 1);
+    const outerDepth = Math.min(model.radial.radiiByDepth.length - 1, projected.depth + 1);
+    const innerRadius = model.radial.radiiByDepth[innerDepth] ?? 0;
+    const outerRadius = model.radial.radiiByDepth[outerDepth] ?? model.radial.maximumRadius;
+    const minimumRingGap = layoutOptions?.radial?.minimumRingGap ?? 132;
+    const adjacentBandWidth = Math.max(
+      minimumRingGap,
+      (outerRadius - innerRadius) / Math.max(1, outerDepth - innerDepth),
+    );
+    const available = Math.max(1, Math.min(radialViewportSize.width, radialViewportSize.height));
+    const zoom = Math.min(4.5, Math.max(0.08, available / (3 * adjacentBandWidth)));
+    radialController.moveTo({
+      x: radialViewportSize.width / 2 - projected.canonicalPosition.x * zoom,
+      y: radialViewportSize.height / 2 - projected.canonicalPosition.y * zoom,
+      zoom,
+    });
+  };
   const availableActions = selectedNode
     ? actions.filter((action) => action.isAvailable?.(selectedNode) ?? true)
     : [];
@@ -267,6 +289,7 @@ export function PersistentFrontierGraph<TData>({
       data-frontier-mode={frontierOverride === undefined ? "auto" : "fixed"}
       data-maximum-radial-offset={maximumRadialOffset.toFixed(3)}
       data-radial-offset={coneCamera.radialOffset.toFixed(3)}
+      data-vertical-offset={coneCamera.verticalOffset.toFixed(3)}
     >
       <div className="pfg-graph__views">
         <GraphViewport
@@ -291,7 +314,7 @@ export function PersistentFrontierGraph<TData>({
           edgePath={radialEdgePath}
           getNodeLabel={getNodeLabel}
           key={`${tree.revision}:radial`}
-          onSelect={select}
+          onSelect={selectRadial}
           onViewportSizeChange={handleRadialViewportSizeChange}
           overlays={overlays}
           projection={model.radial}

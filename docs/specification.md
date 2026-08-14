@@ -239,6 +239,19 @@ shrink the complete overview into unused space.
 The DOM transform and node coordinates MUST represent the committed camera
 state; an independent CSS position tween MUST NOT introduce hidden camera
 motion or detach gesture anchoring.
+Cone wheel, drag, and control targets MUST pass through one retargetable
+animation frame loop. Its two-stage low-pass filter uses rate `18/s`; each frame is
+limited to `0.6` screen pixels per elapsed millisecond with elapsed time capped
+at `32 ms`, and settles within `0.75 px`. The bound is measured against actual
+visible card corners after frontier interpolation and parent clamping, not only
+against camera scalars. Reduced motion applies the target immediately.
+A new gesture starts from the last committed painted camera. Releasing or
+cancelling a drag stops on that exact frame rather than completing a stale
+target. Reaching minimum zoom with zero radial offset restores the canonical
+centered Fit camera.
+Selecting a point in the radial canvas MUST center its canonical point and
+frame approximately three adjacent depth bands. Radial wheel and drag updates
+MUST be coalesced to at most one camera commit per animation frame.
 
 The bundled composite MUST allocate equal horizontal width to the cone and
 radial canvases. The 50/50 split remains stable across camera zoom, browser
@@ -290,6 +303,11 @@ applications SHOULD wrap untrusted renderers in their own error boundary.
   captures after its threshold and cannot emit an accidental selection.
 - **VIEWPORT-05:** Cone motion is clamped to its first and terminal extents
   independently of zoom.
+- **VIEWPORT-06:** Retargeted wheel/drag motion stays within its screen-space
+  frame budget, release freezes the painted frame, and the overview boundary
+  restores canonical Fit.
+- **VIEWPORT-07:** Radial camera updates are frame-coalesced and radial point
+  selection centers the point at a three-band scale.
 - **EXT-01:** Custom renderers, edge appearance, overlays, labels, actions, and
   headless APIs work without changing the core tree.
 - **A11Y-01:** The full demo passes automated WCAG 2.2 AA checks and supports

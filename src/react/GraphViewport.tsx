@@ -19,7 +19,7 @@ import type { PannableViewport } from "./usePannableViewport.js";
 type ViewportController = Pick<
   PannableViewport,
   "handlers" | "isDragging" | "onWheel" | "reset" | "shouldSuppressClick" | "viewport" | "zoomBy"
->;
+> & { readonly isMoving?: boolean };
 
 export interface GraphViewportProps<TData> {
   readonly ariaLabel: string;
@@ -166,6 +166,7 @@ export function GraphViewport<TData>({
       <div
         aria-hidden="true"
         className={`pfg-viewport__canvas ${camera.isDragging ? "is-dragging" : ""}`}
+        data-motion-in-flight={camera.isMoving ? "true" : "false"}
         ref={canvasRef}
         {...camera.handlers}
       >
