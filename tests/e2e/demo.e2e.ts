@@ -33,6 +33,27 @@ test("opens with the controls and live visualization", async ({ page }) => {
   await expect(page.getByText("Keep the frontier", { exact: false })).toHaveCount(0);
 });
 
+test("zooms the projection wheel without scrolling the page", async ({ page }) => {
+  const cone = page.getByRole("region", { name: "Persistent frontier cone projection" });
+  const canvas = cone.locator(".pfg-viewport__canvas");
+  const zoom = cone.getByLabel("cone zoom");
+  await canvas.scrollIntoViewIfNeeded();
+  const initialZoom = await zoom.textContent();
+  const bounds = await canvas.boundingBox();
+  const viewport = page.viewportSize();
+  if (!bounds || !viewport) throw new Error("Cone canvas is not measurable.");
+  const visibleLeft = Math.max(bounds.x, 0);
+  const visibleRight = Math.min(bounds.x + bounds.width, viewport.width);
+  const visibleTop = Math.max(bounds.y, 0);
+  const visibleBottom = Math.min(bounds.y + bounds.height, viewport.height);
+  if (visibleLeft >= visibleRight || visibleTop >= visibleBottom) throw new Error("Cone canvas is outside the viewport.");
+  await page.mouse.move((visibleLeft + visibleRight) / 2, (visibleTop + visibleBottom) / 2);
+  const initialScroll = await page.evaluate(() => window.scrollY);
+  await page.mouse.wheel(0, -500);
+  await expect(zoom).not.toHaveText(initialZoom ?? "");
+  expect(await page.evaluate(() => window.scrollY)).toBe(initialScroll);
+});
+
 test("generates a bounded tree and keeps both views synchronized", async ({ page }) => {
   const cone = page.getByRole("region", { name: "Persistent frontier cone projection" });
   const radial = page.getByRole("region", { name: "Synchronized radial tree" });

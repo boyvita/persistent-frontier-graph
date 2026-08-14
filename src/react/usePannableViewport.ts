@@ -1,4 +1,4 @@
-import { useCallback, useLayoutEffect, useRef, useState, type PointerEvent, type WheelEvent } from "react";
+import { useCallback, useLayoutEffect, useRef, useState, type PointerEvent } from "react";
 import type { ViewportState } from "../core/types.js";
 
 interface DragState {
@@ -15,8 +15,8 @@ export interface PannableViewport {
     readonly onPointerDown: (event: PointerEvent<HTMLElement>) => void;
     readonly onPointerMove: (event: PointerEvent<HTMLElement>) => void;
     readonly onPointerUp: (event: PointerEvent<HTMLElement>) => void;
-    readonly onWheel: (event: WheelEvent<HTMLElement>) => void;
   };
+  readonly onWheel: (event: globalThis.WheelEvent) => void;
   readonly isDragging: boolean;
   readonly reset: () => void;
   readonly viewport: ViewportState;
@@ -71,9 +71,11 @@ export function usePannableViewport(
     if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
   }, []);
 
-  const onWheel = useCallback((event: WheelEvent<HTMLElement>) => {
+  const onWheel = useCallback((event: globalThis.WheelEvent) => {
     event.preventDefault();
-    const bounds = event.currentTarget.getBoundingClientRect();
+    const element = event.currentTarget as HTMLElement | null;
+    if (!element) return;
+    const bounds = element.getBoundingClientRect();
     const cursorX = event.clientX - bounds.left;
     const cursorY = event.clientY - bounds.top;
     const current = viewportRef.current;
@@ -98,9 +100,9 @@ export function usePannableViewport(
       onPointerDown,
       onPointerMove,
       onPointerUp: stopDrag,
-      onWheel,
     },
     isDragging,
+    onWheel,
     reset,
     viewport,
     zoomBy,
