@@ -149,6 +149,10 @@ Every node at hierarchy depth `d` MUST have horizontal center
 
 ### 5.2 Complete coordinate sets
 
+The bundled geometry defaults to a `210 × 58` card, a `48` pixel column gap,
+and therefore a `258` pixel depth slot. Local branch gaps start at `10`
+pixels, add `10` pixels per divergent generation, and cap at `100` pixels.
+
 For each integer level used by a projection:
 
 1. the boundary contains every terminal node encountered before that level and
@@ -243,6 +247,11 @@ unclamped nodes. Horizontal cone motion MUST clamp before the first column and
 at the terminal extent independently of zoom.
 The cone minimum zoom MUST equal its responsive fit zoom, so zooming out cannot
 shrink the complete overview into unused space.
+On initial mount and after successful regeneration, the cone MUST open at the
+greater of responsive fit and `0.30` zoom. This keeps cards readable while
+preserving Fit as the separate complete-overview command. The bundled cone
+card uses the original rectangular dark treatment at its declared geometry;
+custom renderers remain free to replace its contents and appearance.
 The DOM transform and node coordinates MUST represent the committed camera
 state; an independent CSS position tween MUST NOT introduce hidden camera
 motion or detach gesture anchoring.
@@ -323,6 +332,10 @@ applications SHOULD wrap untrusted renderers in their own error boundary.
 - **VIEWPORT-08:** Cone movement centers and fits the complete radial sector;
   direct radial camera input overrides following only until the next cone
   movement.
+- **VIEWPORT-09:** A large graph opens at `0.30` cone zoom with `210 × 58`
+  cards, Fit reaches the responsive minimum, and a direct card or background
+  drag changes the projection after its threshold before freezing at the
+  release frame.
 - **DEMO-01:** Navigation, generation controls, both graph windows, and graph
   status fit in the first viewport at supported desktop and mobile sizes.
 - **EXT-01:** Custom renderers, edge appearance, overlays, labels, actions, and

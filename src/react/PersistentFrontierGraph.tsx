@@ -25,6 +25,7 @@ import { usePannableViewport } from "./usePannableViewport.js";
 
 const EMPTY_VIEWPORT_SIZE: Size = { height: 0, width: 0 };
 const CANVAS_PADDING = 48;
+const DEFAULT_CONE_ZOOM = 0.3;
 
 interface RevisionViewport {
   readonly followToken: number;
@@ -161,7 +162,7 @@ export function PersistentFrontierGraph<TData>({
 
   const baseModel = baseResult.model;
   const nodeSize = layoutOptions?.cone?.nodeSize ?? DEFAULT_CONE_NODE_SIZE;
-  const depthSlot = nodeSize.width + (layoutOptions?.cone?.columnGap ?? 74);
+  const depthSlot = nodeSize.width + (layoutOptions?.cone?.columnGap ?? 48);
   const radialExtent = baseModel
     ? baseModel.index.maximumDepth * depthSlot + nodeSize.width
     : nodeSize.width;
@@ -178,17 +179,22 @@ export function PersistentFrontierGraph<TData>({
         radialViewportSize.height / Math.max(1, baseModel.radial.maximumRadius * 2.2),
       )))
     : 1;
-  const coneHomeCamera = useMemo<ConeCameraState>(() => ({
+  const coneFitCamera = useMemo<ConeCameraState>(() => ({
     radialOffset: 0,
     verticalOffset: 0,
     zoom: coneFitZoom,
+  }), [coneFitZoom]);
+  const coneInitialCamera = useMemo<ConeCameraState>(() => ({
+    radialOffset: 0,
+    verticalOffset: 0,
+    zoom: Math.max(coneFitZoom, DEFAULT_CONE_ZOOM),
   }), [coneFitZoom]);
   const radialHomeViewport = useMemo<ViewportState>(() => ({
     x: radialViewportSize.width > 0 ? radialViewportSize.width / 2 : 320,
     y: radialViewportSize.height > 0 ? radialViewportSize.height / 2 : 270,
     zoom: radialFitZoom,
   }), [radialFitZoom, radialViewportSize.height, radialViewportSize.width]);
-  const coneCamera = coneCameraState.revision === tree.revision ? coneCameraState.camera : coneHomeCamera;
+  const coneCamera = coneCameraState.revision === tree.revision ? coneCameraState.camera : coneInitialCamera;
 
   const radialSpanAt = useCallback((camera: ConeCameraState) => {
     const available = coneViewportSize.width > 0
@@ -244,8 +250,9 @@ export function PersistentFrontierGraph<TData>({
     camera: coneCamera,
     depthSlot,
     getLayout: getConeLayout,
-    homeCamera: coneHomeCamera,
+    homeCamera: coneFitCamera,
     maximumRadialOffset,
+    minimumZoom: coneFitZoom,
     nodeSize,
     onCameraChange: handleConeCameraChange,
     viewportSize: coneViewportSize,
@@ -350,6 +357,7 @@ export function PersistentFrontierGraph<TData>({
           camera={coneController}
           getNodeLabel={getNodeLabel}
           key={`${tree.revision}:cone`}
+          nodeSize={nodeSize}
           onSelect={select}
           onViewportSizeChange={handleConeViewportSizeChange}
           overlays={overlays}

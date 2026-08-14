@@ -25,7 +25,7 @@ function fixture(): FrontierTree<GeneratedNodeData> {
 describe("persistent frontier layouts", () => {
   it("keeps true depth in cone columns at every frontier", () => {
     const model = createFrontierGraphModel(fixture(), 2.4);
-    const slot = 208 + 74;
+    const slot = 210 + 48;
     for (const projected of model.cone.nodes) {
       expect(projected.position.x).toBe(projected.depth * slot);
     }
@@ -121,7 +121,7 @@ describe("persistent frontier layouts", () => {
       model.cone,
       { x: 80, y: 220, zoom: 0.7 },
       { height: 440, width: 720 },
-      { height: 64, width: 208 },
+      { height: 58, width: 210 },
     );
     const sector = deriveRadialProjectionSector(window, model.radial);
     expect(sector).not.toBeNull();
@@ -138,7 +138,7 @@ describe("persistent frontier layouts", () => {
       model.cone,
       { x: 0, y: 500_000, zoom: 1 },
       { height: 1_000_000, width: 1_000_000 },
-      { height: 64, width: 208 },
+      { height: 58, width: 210 },
     );
     const sector = deriveRadialProjectionSector(window, model.radial);
     expect(model.cone.nodes.every((node) => node.reveal === 1)).toBe(true);
@@ -157,8 +157,8 @@ describe("persistent frontier layouts", () => {
   });
 
   it("holds an automatic coordinate set for the first half of a depth band", () => {
-    const nodeWidth = 208;
-    const depthSlot = 282;
+    const nodeWidth = 210;
+    const depthSlot = 258;
     const offset = 0;
     const spanAt = (capacity: number) => nodeWidth / 2 + capacity * depthSlot;
 

@@ -55,6 +55,9 @@ common ancestor is farther away, the algorithm adds a bounded hierarchy gap.
 This makes family boundaries readable without allowing sparse trees to explode
 in height.
 
+The bundled projection keeps the source geometry: cards are `210 × 58`, depth
+columns are `258` pixels apart, and hierarchy gaps progress `10, 20, …, 100`.
+
 ## 3. Center parents bottom-up
 
 After boundary centers are known, each ancestor receives:
@@ -161,3 +164,6 @@ Pointer release cancels the remaining target and retains the last committed
 camera. A new gesture therefore starts from what the user actually sees. At
 the complete overview boundary, cursor anchoring yields to the centered Fit
 camera so no stale vertical offset survives a saturated zoom-out gesture.
+Initial presentation is intentionally distinct from Fit: a large graph opens
+at `0.30` zoom for readable exploration, while Fit remains the responsive
+minimum that frames the complete topology.

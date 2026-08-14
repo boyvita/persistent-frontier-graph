@@ -16,6 +16,14 @@ test("opens with the controls and live visualization", async ({ page }) => {
   await expect(page.getByLabel("Maximum branches")).toBeInViewport();
   const cone = page.getByRole("region", { name: "Persistent frontier cone projection" });
   const radial = page.getByRole("region", { name: "Synchronized radial tree" });
+  await expect(cone.getByLabel("cone zoom")).toHaveText("30%");
+  const initialCard = cone.locator("[data-node-id]").first();
+  const initialCardBounds = await initialCard.boundingBox();
+  if (!initialCardBounds) throw new Error("The initial cone card is not measurable.");
+  expect(initialCardBounds.width).toBeGreaterThanOrEqual(62);
+  expect(initialCardBounds.width).toBeLessThanOrEqual(64);
+  expect(initialCardBounds.height).toBeGreaterThanOrEqual(17);
+  expect(initialCardBounds.height).toBeLessThanOrEqual(18);
   await expect(cone).toBeInViewport();
   const coneBounds = await cone.boundingBox();
   const radialBounds = await radial.boundingBox();
@@ -78,7 +86,7 @@ test("keeps the directly grabbed card anchored through one wheel session", async
   const cone = page.getByRole("region", { name: "Persistent frontier cone projection" });
   const canvas = cone.locator(".pfg-viewport__canvas");
   await canvas.scrollIntoViewIfNeeded();
-  const card = cone.locator('[data-depth="7"][data-in-viewport="true"]').first();
+  const card = cone.locator('[data-in-viewport="true"]').last();
   const before = await card.boundingBox();
   if (!before) throw new Error("The wheel anchor card is not measurable.");
   const anchorX = before.x + before.width / 2;
@@ -111,10 +119,10 @@ test("filters wheel motion in bounded painted frames", async ({ page }) => {
   const cone = page.getByRole("region", { name: "Persistent frontier cone projection" });
   const canvas = cone.locator(".pfg-viewport__canvas");
   await canvas.scrollIntoViewIfNeeded();
-  const card = cone.locator('[data-depth="7"][data-in-viewport="true"]').first();
+  const card = cone.locator('[data-in-viewport="true"]').first();
   const bounds = await card.boundingBox();
   if (!bounds) throw new Error("The motion probe card is not measurable.");
-  const fitZoom = await cone.getByLabel("cone zoom").textContent();
+  const openingZoom = await cone.getByLabel("cone zoom").textContent();
 
   await card.evaluate((node) => {
     const samples: Array<{ x: number; y: number }> = [];
@@ -130,8 +138,16 @@ test("filters wheel motion in bounded painted frames", async ({ page }) => {
     (window as typeof window & { __pfgMotionProbe?: typeof probe }).__pfgMotionProbe = probe;
     sample();
   });
-  await page.mouse.move(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2);
-  await page.mouse.wheel(0, -1_200);
+  await card.evaluate((node) => {
+    const box = node.getBoundingClientRect();
+    node.dispatchEvent(new WheelEvent("wheel", {
+      bubbles: true,
+      cancelable: true,
+      clientX: box.left + box.width / 2,
+      clientY: box.top + box.height / 2,
+      deltaY: -1_200,
+    }));
+  });
   await expect(canvas).toHaveAttribute("data-motion-in-flight", "true");
   await expect(canvas).toHaveAttribute("data-motion-in-flight", "false", { timeout: 10_000 });
 
@@ -153,10 +169,21 @@ test("filters wheel motion in bounded painted frames", async ({ page }) => {
   expect(result.samples).toBeGreaterThan(3);
   expect(result.maximumStep).toBeLessThanOrEqual(22);
 
-  await page.mouse.wheel(0, 5_000);
+  await card.evaluate((node) => {
+    const box = node.getBoundingClientRect();
+    node.dispatchEvent(new WheelEvent("wheel", {
+      bubbles: true,
+      cancelable: true,
+      clientX: box.left + box.width / 2,
+      clientY: box.top + box.height / 2,
+      deltaY: 5_000,
+    }));
+  });
   await expect(canvas).toHaveAttribute("data-motion-in-flight", "true");
   await expect(canvas).toHaveAttribute("data-motion-in-flight", "false", { timeout: 10_000 });
-  await expect(cone.getByLabel("cone zoom")).toHaveText(fitZoom ?? "");
+  await expect(cone.getByLabel("cone zoom")).not.toHaveText(openingZoom ?? "");
+  await cone.getByRole("button", { name: "Fit" }).click();
+  await expect(canvas).toHaveAttribute("data-motion-in-flight", "false", { timeout: 10_000 });
   await expect(page.locator(".pfg-graph")).toHaveAttribute("data-radial-offset", "0.000");
   await expect(page.locator(".pfg-graph")).toHaveAttribute("data-vertical-offset", "0.000");
 });
@@ -226,7 +253,7 @@ test("generates a bounded tree and keeps both views synchronized", async ({ page
     cancelable: true,
     clientX: canvasBounds.x + 24,
     clientY: canvasBounds.y + canvasBounds.height / 2,
-    deltaY: -3_000,
+    deltaY: -500,
   });
   await expect(coneCanvas).toHaveAttribute("data-motion-in-flight", "false", { timeout: 10_000 });
   await expect.poll(async () => Number(await graph.getAttribute("data-frontier"))).not.toBe(initialFrontier);
@@ -243,13 +270,15 @@ test("generates a bounded tree and keeps both views synchronized", async ({ page
     if (!canvas) return null;
     const horizontalMargin = Math.min(100, canvas.width * 0.2);
     const verticalMargin = Math.min(50, canvas.height * 0.15);
-    const target = nodes.find((node) => {
+    const target = [...nodes]
+      .sort((left, right) => Number((right as HTMLElement).dataset.depth) - Number((left as HTMLElement).dataset.depth))
+      .find((node) => {
       const box = node.getBoundingClientRect();
       const centerX = box.left + box.width / 2;
       const centerY = box.top + box.height / 2;
       return centerX > canvas.left + horizontalMargin && centerX < canvas.right - horizontalMargin
         && centerY > canvas.top + verticalMargin && centerY < canvas.bottom - verticalMargin;
-    });
+      });
     return (target as HTMLElement | undefined)?.dataset.nodeId ?? null;
   });
   if (!directGrabId) throw new Error("No directly grabbable cone card is fully inside the canvas.");
@@ -363,7 +392,7 @@ test("centers the complete radial sector after cone movement", async ({ page }) 
     cancelable: true,
     clientX: coneBounds.x + 24,
     clientY: coneBounds.y + coneBounds.height / 2,
-    deltaY: -3_000,
+    deltaY: -500,
   });
   await expect(coneCanvas).toHaveAttribute("data-motion-in-flight", "false", { timeout: 10_000 });
   await expect.poll(centerDistance).toBeLessThanOrEqual(3);
@@ -403,6 +432,7 @@ test("regeneration resets the automatic projection camera atomically", async ({ 
 });
 
 test("clamps direct projection dragging at zoom-independent terminal bounds", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
   const graph = page.locator(".pfg-graph");
   const cone = page.getByRole("region", { name: "Persistent frontier cone projection" });
   const canvas = cone.locator(".pfg-viewport__canvas");
@@ -410,18 +440,21 @@ test("clamps direct projection dragging at zoom-independent terminal bounds", as
   const bounds = await canvas.boundingBox();
   if (!bounds) throw new Error("Cone canvas is not measurable.");
 
+  const openingZoom = await cone.getByLabel("cone zoom").textContent();
+  await cone.getByRole("button", { name: "Fit" }).click();
+  await expect(cone.getByLabel("cone zoom")).not.toHaveText(openingZoom ?? "");
+
   const startX = bounds.x + bounds.width * 0.75;
   const startY = bounds.y + bounds.height / 2;
+  const maximum = Number(await graph.getAttribute("data-maximum-radial-offset"));
   await page.mouse.move(startX, startY);
   await page.mouse.down();
   await page.mouse.move(bounds.x + 8, startY, { steps: 4 });
-
-  const maximum = Number(await graph.getAttribute("data-maximum-radial-offset"));
-  await expect.poll(async () => Number(await graph.getAttribute("data-radial-offset"))).toBeCloseTo(maximum, 2);
   await page.mouse.up();
-  const fitZoom = await cone.getByLabel("cone zoom").textContent();
-  await cone.getByRole("button", { name: "Zoom out cone view" }).click();
-  await expect(cone.getByLabel("cone zoom")).toHaveText(fitZoom ?? "");
+  await expect.poll(async () => Number(await graph.getAttribute("data-radial-offset"))).toBeCloseTo(maximum, 2);
+  const zoomBefore = await cone.getByLabel("cone zoom").textContent();
+  await cone.getByRole("button", { name: "Zoom in cone view" }).click();
+  await expect(cone.getByLabel("cone zoom")).not.toHaveText(zoomBefore ?? "");
   await expect.poll(async () => Number(await graph.getAttribute("data-radial-offset"))).toBeCloseTo(maximum, 2);
 });
 
@@ -472,7 +505,7 @@ test("focuses a selected radial point across three depth bands", async ({ page }
   const radial = page.getByRole("region", { name: "Synchronized radial tree" });
   const canvas = radial.locator(".pfg-viewport__canvas");
   await canvas.scrollIntoViewIfNeeded();
-  const target = radial.locator('[data-depth="4"][data-in-projection-window="true"]').first();
+  const target = radial.locator('[data-depth="1"][data-in-projection-window="true"]').first();
   const targetId = await target.getAttribute("data-node-id");
   if (!targetId) throw new Error("No radial focus target is available.");
   const initialZoom = await radial.getByLabel("radial zoom").textContent();

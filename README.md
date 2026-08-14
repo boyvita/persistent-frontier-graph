@@ -129,6 +129,9 @@ The visual canvases support direct card or background drag, cursor-anchored
 wheel navigation, responsive fit, and zoom buttons. Wheel gestures are captured
 inside a canvas instead of scrolling the document. Retargetable frame-bounded
 motion keeps the painted cards and gesture state in one coordinate frame. The
+cone opens at a readable 30% scale on large trees; Fit remains available for
+the complete overview. The bundled rectangular `210 × 58` cards and `258`
+pixel depth slots match the original projection geometry. The
 bundled component keeps the cone and radial canvases at an equal 50/50 width
 across zoom and responsive viewport changes. The composite derives the cone
 camera's exact card-intersection set before rendering either view; the radial annular sector

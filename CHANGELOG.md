@@ -5,6 +5,8 @@ versioning after its first tagged release.
 
 ## Unreleased
 
+- Restore the source mind-map geometry, readable 30% opening camera, dark
+  rectangular cards, card-edge links, and responsive Fit as a separate action.
 - Keep cone and radial canvases at an equal 50/50 width across responsive and
   zoom changes.
 - Present branch, depth, and node count as range controls in the demo.

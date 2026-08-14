@@ -27,7 +27,7 @@ const INITIAL_OPTIONS: DemoOptions = {
 };
 
 const LAYOUT_OPTIONS = {
-  cone: { columnGap: 78, hierarchyGap: 12, localGap: 14, maximumHierarchyGap: 110 },
+  cone: { columnGap: 48, hierarchyGap: 10, localGap: 10, maximumHierarchyGap: 100 },
   radial: { minimumRingGap: 132, nodePitch: 50, seamPadding: 0.12 },
 } as const;
 
@@ -46,13 +46,11 @@ function buildTree(options: DemoOptions, seed: string) {
   return generateTree({ ...options, seed } satisfies GenerateTreeOptions);
 }
 
-function DemoNode({ data, depth, view }: NodeRendererContext<GeneratedNodeData>) {
+function DemoNode({ data, view }: NodeRendererContext<GeneratedNodeData>) {
   if (view === "radial") return <span>{data.label}</span>;
   return (
     <span className="demo-node">
-      <span className="demo-node__eyebrow">{`LEVEL ${depth}`}</span>
       <strong>{data.label}</strong>
-      <small>{data.ordinal.toString().padStart(4, "0")}</small>
     </span>
   );
 }

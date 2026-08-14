@@ -196,6 +196,11 @@ body is not the accessibility name. Supply `getNodeLabel` for
 non-standard data. The component's native node navigator mirrors the current
 complete topology for keyboard and assistive-technology access.
 
+The bundled cone opens at `max(responsiveFit, 0.30)` and keeps Fit as a
+separate complete-overview command. Default cone geometry is a `210 × 58`
+card with a `48` pixel column gap; override `layoutOptions.cone` together with
+matching consumer CSS when a custom renderer uses different dimensions.
+
 Selecting a radial point centers its canonical position and frames roughly
 three adjacent depth bands. Radial wheel and drag updates are coalesced to one
 camera commit per animation frame. The radial follow camera may zoom out to

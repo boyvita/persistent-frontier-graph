@@ -27,6 +27,7 @@ export interface GraphViewportProps<TData> {
   readonly className?: string | undefined;
   readonly edgePath?: ((source: Point, target: Point) => string) | undefined;
   readonly getNodeLabel?: NodeLabelGetter<TData> | undefined;
+  readonly nodeSize?: Size | undefined;
   readonly onSelect: (id: NodeId) => void;
   readonly onViewportSizeChange?: ((size: Size) => void) | undefined;
   readonly overlays?: readonly GraphOverlay<TData>[] | undefined;
@@ -49,6 +50,13 @@ function defaultLabel(data: unknown): string {
 function defaultEdgePath(source: Point, target: Point): string {
   const middleX = (source.x + target.x) / 2;
   return `M ${source.x} ${source.y} C ${middleX} ${source.y}, ${middleX} ${target.y}, ${target.x} ${target.y}`;
+}
+
+function defaultConeEdgePath(source: Point, target: Point, nodeWidth: number): string {
+  return defaultEdgePath(
+    { x: source.x + nodeWidth / 2, y: source.y },
+    { x: target.x - nodeWidth / 2, y: target.y },
+  );
 }
 
 function polar(radius: number, angle: number): Point {
@@ -97,8 +105,9 @@ export function GraphViewport<TData>({
   ariaLabel,
   camera,
   className,
-  edgePath = defaultEdgePath,
+  edgePath,
   getNodeLabel,
+  nodeSize,
   onSelect,
   onViewportSizeChange,
   overlays = [],
@@ -194,7 +203,10 @@ export function GraphViewport<TData>({
               return (
                 <path
                   className={appearance?.className}
-                  d={edgePath(edge.source, edge.target)}
+                  d={edgePath?.(edge.source, edge.target)
+                    ?? (view === "cone"
+                      ? defaultConeEdgePath(edge.source, edge.target, nodeSize?.width ?? 0)
+                      : defaultEdgePath(edge.source, edge.target))}
                   data-edge-id={edge.id}
                   data-in-projection-window={view === "radial"
                     ? (isInsideRadialWindow ? "true" : "false")

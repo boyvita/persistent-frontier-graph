@@ -34,7 +34,7 @@ export interface ConeLayoutResult<TData> extends FrontierProjection<TData> {
   readonly clampedNodeIds: ReadonlySet<NodeId>;
 }
 
-export const DEFAULT_CONE_NODE_SIZE: Size = { height: 64, width: 208 };
+export const DEFAULT_CONE_NODE_SIZE: Size = { height: 58, width: 210 };
 
 function boundaryAtLevel<TData>(index: TreeIndex<TData>, level: number): readonly NodeId[] {
   const result: NodeId[] = [];
@@ -120,10 +120,10 @@ export function layoutCone<TData>(
   projectionContext?: ConeProjectionContext,
 ): ConeLayoutResult<TData> {
   const options: Required<ConeLayoutOptions> = {
-    columnGap: suppliedOptions.columnGap ?? 74,
-    hierarchyGap: suppliedOptions.hierarchyGap ?? 12,
-    localGap: suppliedOptions.localGap ?? 12,
-    maximumHierarchyGap: suppliedOptions.maximumHierarchyGap ?? 112,
+    columnGap: suppliedOptions.columnGap ?? 48,
+    hierarchyGap: suppliedOptions.hierarchyGap ?? 10,
+    localGap: suppliedOptions.localGap ?? 10,
+    maximumHierarchyGap: suppliedOptions.maximumHierarchyGap ?? 100,
     nodeSize: suppliedOptions.nodeSize ?? DEFAULT_CONE_NODE_SIZE,
   };
   const lower = coordinateSet(index, snapshot.lowerLevel, options);

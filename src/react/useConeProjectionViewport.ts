@@ -77,6 +77,7 @@ interface ConeProjectionViewportOptions {
   readonly getLayout: (camera: ConeCameraState) => ProjectionLayout;
   readonly homeCamera: ConeCameraState;
   readonly maximumRadialOffset: number;
+  readonly minimumZoom: number;
   readonly nodeSize: Size;
   readonly onCameraChange: (camera: ConeCameraState) => void;
   readonly viewportSize: Size;
@@ -151,6 +152,7 @@ export function useConeProjectionViewport({
   getLayout,
   homeCamera,
   maximumRadialOffset,
+  minimumZoom: suppliedMinimumZoom,
   nodeSize,
   onCameraChange,
   viewportSize,
@@ -200,7 +202,7 @@ export function useConeProjectionViewport({
     setIsMoving(false);
   }, [authorityKey, camera]);
 
-  const minimumZoom = clamp(homeCamera.zoom, MIN_ZOOM, MAX_ZOOM);
+  const minimumZoom = clamp(suppliedMinimumZoom, MIN_ZOOM, MAX_ZOOM);
 
   const clampCamera = useCallback((candidate: ConeCameraState): ConeCameraState => {
     const bounded = {
