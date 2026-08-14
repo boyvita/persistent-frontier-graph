@@ -447,10 +447,34 @@ test("clamps direct projection dragging at zoom-independent terminal bounds", as
   const startX = bounds.x + bounds.width * 0.75;
   const startY = bounds.y + bounds.height / 2;
   const maximum = Number(await graph.getAttribute("data-maximum-radial-offset"));
-  await page.mouse.move(startX, startY);
-  await page.mouse.down();
-  await page.mouse.move(bounds.x + 8, startY, { steps: 4 });
-  await page.mouse.up();
+  await canvas.evaluate(async (element, point) => {
+    const pointerId = 97;
+    element.setPointerCapture = () => undefined;
+    element.releasePointerCapture = () => undefined;
+    element.hasPointerCapture = () => false;
+    element.dispatchEvent(new PointerEvent("pointerdown", {
+      bubbles: true,
+      button: 0,
+      clientX: point.x,
+      clientY: point.y,
+      pointerId,
+    }));
+    element.dispatchEvent(new PointerEvent("pointermove", {
+      bubbles: true,
+      button: 0,
+      clientX: point.x - 10_000,
+      clientY: point.y,
+      pointerId,
+    }));
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    element.dispatchEvent(new PointerEvent("pointerup", {
+      bubbles: true,
+      button: 0,
+      clientX: point.x - 10_000,
+      clientY: point.y,
+      pointerId,
+    }));
+  }, { x: startX, y: startY });
   await expect.poll(async () => Number(await graph.getAttribute("data-radial-offset"))).toBeCloseTo(maximum, 2);
   const zoomBefore = await cone.getByLabel("cone zoom").textContent();
   await cone.getByRole("button", { name: "Zoom in cone view" }).click();
