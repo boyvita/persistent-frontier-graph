@@ -274,6 +274,12 @@ centered Fit camera.
 Selecting a point in the radial canvas MUST center its canonical point and
 frame approximately three adjacent depth bands. Radial wheel and drag updates
 MUST be coalesced to at most one camera commit per animation frame.
+Non-root radial labels MUST follow their branch angle. Labels on the left half
+MUST rotate by 180 degrees to remain upright; the root label remains horizontal.
+Projection canvases MUST suppress native text selection and native drag
+ghosts. Camera transforms MUST remain vector/text-rasterization friendly after
+zoom settles rather than forcing the complete scene into a fixed-resolution
+3D compositor cache.
 
 The bundled composite MUST allocate equal horizontal width to the cone and
 radial canvases. The 50/50 split remains stable across camera zoom, browser
@@ -342,6 +348,9 @@ applications SHOULD wrap untrusted renderers in their own error boundary.
   cards, Fit reaches the responsive minimum, and a direct card or background
   drag changes the projection after its threshold before freezing at the
   release frame.
+- **VIEWPORT-10:** Radial labels follow branches while remaining upright, root
+  stays horizontal, canvas gestures cannot select text, and settled zoom does
+  not retain a forced low-resolution compositor layer.
 - **DEMO-01:** Navigation, generation controls, both graph windows, and graph
   status fit in the first viewport at supported desktop and mobile sizes.
 - **DEMO-02:** The demo exposes at most 300 nodes, 10 branches, and 20 levels;

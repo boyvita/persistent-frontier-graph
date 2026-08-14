@@ -63,6 +63,16 @@ function polar(radius: number, angle: number): Point {
   return { x: radius * Math.cos(angle), y: radius * Math.sin(angle) };
 }
 
+function radialLabelPlacement(position: Point): { angle: number; side: "left" | "right" | "root" } {
+  if (Math.hypot(position.x, position.y) <= 0.001) return { angle: 0, side: "root" };
+  const angle = Math.atan2(position.y, position.x) * 180 / Math.PI;
+  const pointsLeft = angle > 90 || angle < -90;
+  return {
+    angle: pointsLeft ? angle + 180 : angle,
+    side: pointsLeft ? "left" : "right",
+  };
+}
+
 function radialSectorPath(sector: RadialProjectionSector): string {
   const innerRadius = Math.max(0, sector.innerRadius);
   const outerRadius = Math.max(innerRadius, sector.outerRadius);
@@ -176,12 +186,13 @@ export function GraphViewport<TData>({
         aria-hidden="true"
         className={`pfg-viewport__canvas ${camera.isDragging ? "is-dragging" : ""}`}
         data-motion-in-flight={camera.isMoving ? "true" : "false"}
+        onDragStart={(event) => event.preventDefault()}
         ref={canvasRef}
         {...camera.handlers}
       >
         <div
           className="pfg-scene"
-          style={{ transform: `translate3d(${camera.viewport.x}px, ${camera.viewport.y}px, 0) scale(${camera.viewport.zoom})` }}
+          style={{ transform: `translate(${camera.viewport.x}px, ${camera.viewport.y}px) scale(${camera.viewport.zoom})` }}
         >
           <svg className="pfg-edges" aria-hidden="true" overflow="visible">
             {view === "radial" && radialSector ? (
@@ -223,6 +234,7 @@ export function GraphViewport<TData>({
           <div className="pfg-nodes">
             {projection.nodes.map((projected) => {
               const selected = selectedId === projected.node.id;
+              const radialLabel = view === "radial" ? radialLabelPlacement(projected.position) : null;
               const isInsideRadialWindow = view !== "radial"
                 || Boolean(radialSector?.visibleNodeIds.has(projected.node.id));
               const isVisible = isRevealed(projected.reveal);
@@ -252,15 +264,17 @@ export function GraphViewport<TData>({
                   data-in-viewport={view === "cone"
                     ? (viewportWindow?.visibleNodeIds.has(projected.node.id) ? "true" : "false")
                     : undefined}
+                  data-radial-label-side={radialLabel?.side}
                   key={projected.node.id}
                   onClick={() => {
                     if (!camera.shouldSuppressClick()) onSelect(projected.node.id);
                   }}
                   style={{
+                    "--pfg-radial-label-angle": radialLabel ? `${radialLabel.angle.toFixed(2)}deg` : undefined,
                     opacity: isVisible ? projected.reveal : 0,
                     pointerEvents: isVisible ? undefined : "none",
-                    transform: `translate3d(${projected.position.x}px, ${projected.position.y}px, 0) translate(-50%, -50%)`,
-                  }}
+                    transform: `translate(${projected.position.x}px, ${projected.position.y}px) translate(-50%, -50%)`,
+                  } as React.CSSProperties}
                 >
                   {content}
                 </div>

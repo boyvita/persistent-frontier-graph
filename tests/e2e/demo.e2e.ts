@@ -87,6 +87,41 @@ test("zooms the projection wheel without scrolling the page", async ({ page }) =
   }
 });
 
+test("keeps radial labels aligned and canvas gestures free of text selection", async ({ page }) => {
+  const radial = page.getByRole("region", { name: "Synchronized radial tree" });
+  const radialCanvas = radial.locator(".pfg-viewport__canvas");
+  const radialScene = radial.locator(".pfg-scene");
+  const root = radial.locator('[data-node-id="node-0000"]');
+  await expect(root).toHaveAttribute("data-radial-label-side", "root");
+  await expect(root.locator(":scope > span")).toContainText("Academic learning map");
+
+  const branchLabels = radial.locator('[data-radial-label-side="left"], [data-radial-label-side="right"]');
+  await expect(branchLabels.first()).toBeAttached();
+  expect(await branchLabels.count()).toBeGreaterThan(0);
+  const rendering = await radialScene.evaluate((element) => ({
+    inlineTransform: element.getAttribute("style") ?? "",
+    willChange: getComputedStyle(element).willChange,
+  }));
+  expect(rendering.inlineTransform).not.toContain("translate3d");
+  expect(rendering.willChange).toBe("auto");
+
+  await radial.getByRole("button", { name: "Zoom in radial view" }).click();
+  await radial.getByRole("button", { name: "Zoom in radial view" }).click();
+  await expect(radial.getByLabel("radial zoom")).not.toHaveText("100%");
+  expect(await radialScene.evaluate((element) => getComputedStyle(element).willChange)).toBe("auto");
+
+  const cone = page.getByRole("region", { name: "Persistent frontier cone projection" });
+  const text = cone.locator(".pfg-node--cone strong").first();
+  const bounds = await text.boundingBox();
+  if (!bounds) throw new Error("A cone label is not measurable.");
+  await page.mouse.move(bounds.x + 2, bounds.y + bounds.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(bounds.x + Math.max(3, bounds.width - 2), bounds.y + bounds.height / 2, { steps: 4 });
+  await page.mouse.up();
+  expect(await page.evaluate(() => window.getSelection()?.toString() ?? "")).toBe("");
+  await expect(radialCanvas).toHaveCSS("user-select", "none");
+});
+
 test("keeps the directly grabbed card anchored through one wheel session", async ({ page }) => {
   const cone = page.getByRole("region", { name: "Persistent frontier cone projection" });
   const canvas = cone.locator(".pfg-viewport__canvas");

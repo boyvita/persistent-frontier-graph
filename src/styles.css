@@ -110,6 +110,14 @@
   overflow: hidden;
   position: relative;
   touch-action: none;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.pfg-viewport__canvas * {
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 .pfg-viewport__canvas.is-dragging {
@@ -123,7 +131,6 @@
   top: 0;
   transform-origin: 0 0;
   width: 0;
-  will-change: transform;
 }
 
 .pfg-viewport__canvas.is-dragging .pfg-scene {
@@ -185,7 +192,6 @@
     opacity 160ms ease,
     border-color 160ms ease,
     background 160ms ease;
-  will-change: transform;
 }
 
 .pfg-sr-only {
@@ -228,14 +234,34 @@
   border-radius: 0.25rem;
   color: #eef2f8;
   font-size: 0.64rem;
-  left: 0.8rem;
   max-width: 7.5rem;
   overflow: hidden;
+  padding: 0.12rem 0.25rem;
   pointer-events: none;
   position: absolute;
-  padding: 0.12rem 0.25rem;
+  text-rendering: geometricPrecision;
   text-overflow: ellipsis;
+  top: 50%;
   white-space: nowrap;
+}
+
+.pfg-node--radial[data-radial-label-side="right"] > span {
+  left: 0.8rem;
+  transform: translateY(-50%) rotate(var(--pfg-radial-label-angle));
+  transform-origin: left center;
+}
+
+.pfg-node--radial[data-radial-label-side="left"] > span {
+  right: 0.8rem;
+  transform: translateY(-50%) rotate(var(--pfg-radial-label-angle));
+  transform-origin: right center;
+}
+
+.pfg-node--radial[data-radial-label-side="root"] > span {
+  bottom: 0.8rem;
+  left: 50%;
+  top: auto;
+  transform: translateX(-50%);
 }
 
 .pfg-node.is-selected {

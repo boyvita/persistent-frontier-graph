@@ -206,8 +206,11 @@ matching consumer CSS when a custom renderer uses different dimensions.
 
 Selecting a radial point centers its canonical position and frames roughly
 three adjacent depth bands. Radial wheel and drag updates are coalesced to one
-camera commit per animation frame. The radial follow camera may zoom out to
-`0.02` so the complete sector remains framed in a narrow canvas.
+camera commit per animation frame. Non-root labels follow their radial branch
+and flip on the left half so text stays upright; the root label stays
+horizontal. The radial follow camera may zoom out to `0.02` so the complete
+sector remains framed in a narrow canvas. Canvas content does not participate
+in native text selection or browser drag-and-drop.
 
 ## Extension contracts
 

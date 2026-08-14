@@ -146,6 +146,8 @@ and pull motion. Every topology node remains mounted. The reusable component
 shows a synchronized native node navigator by default and can hide the complete
 footer with `showFooter={false}` for visual-only embeds. Focus indicators,
 reduced-motion behavior, labels, and WCAG 2.2 automated checks are part of CI.
+Radial labels follow their branches, remain upright on both sides of the tree,
+and repaint sharply after zoom without allowing gesture-driven text selection.
 
 The core uses immutable inputs, iterative traversal, and linear-size output.
 Tests cover a 1,000-node tree. Rendering cost still depends on the consumer's

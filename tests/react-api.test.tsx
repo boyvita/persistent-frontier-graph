@@ -54,6 +54,17 @@ describe("React API", () => {
     for (const [id, node] of before) expect(after.get(id)).toBe(node);
   });
 
+  it("orients radial labels along branches while keeping the root horizontal", () => {
+    render(<PersistentFrontierGraph frontier={3} tree={tree()} />);
+    const radial = screen.getByRole("region", { name: "Synchronized radial tree" });
+    const root = radial.querySelector<HTMLElement>('[data-node-id="node-0000"]');
+    const child = radial.querySelector<HTMLElement>('[data-node-id="node-0001"]');
+    expect(root).toHaveAttribute("data-radial-label-side", "root");
+    expect(root?.style.getPropertyValue("--pfg-radial-label-angle")).toBe("0.00deg");
+    expect(child?.getAttribute("data-radial-label-side")).toMatch(/left|right/);
+    expect(child?.style.getPropertyValue("--pfg-radial-label-angle")).toMatch(/^-?\d+\.\d{2}deg$/);
+  });
+
   it("supports custom renderers and revision-bound actions", () => {
     const onAction = vi.fn();
     const renderNode = ({ data, view }: NodeRendererContext<GeneratedNodeData>) => <span>{view}:{data.ordinal}</span>;
