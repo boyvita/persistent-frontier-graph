@@ -124,6 +124,12 @@ export interface ViewportState {
   readonly zoom: number;
 }
 
+export interface ConeCameraState {
+  readonly radialOffset: number;
+  readonly verticalOffset: number;
+  readonly zoom: number;
+}
+
 export interface ProjectionViewportWindow {
   readonly maximumDepth: number;
   readonly minimumDepth: number;

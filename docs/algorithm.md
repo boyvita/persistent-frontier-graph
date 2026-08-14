@@ -9,21 +9,24 @@ new targets.
 ```mermaid
 flowchart LR
   T[Immutable rooted tree] --> V[Validate and index]
-  V --> S[Shared frontier snapshot]
+  K[Cone camera and canvas size] --> F[Automatic coordinate frontier]
+  V --> F
+  F --> S[Shared frontier snapshot]
   S --> C[Cone coordinate sets]
   S --> R[Radial pull projection]
   C --> W[Exact cone viewport set]
-  K[Cone camera and canvas size] --> W
+  K --> W
   C --> U[One synchronized React render]
   R --> U
   W --> U
   U --> A[Cone and radial views]
 ```
 
-The tree owns structure. The frontier owns reveal depth. Layouts own derived
-coordinates. The composite React boundary owns the camera snapshots and canvas
-sizes. It derives the cone window and radial membership before rendering either
-view, so a child effect cannot introduce a stale radial frame.
+The tree owns structure. The cone camera determines the coordinate frontier;
+it never removes topology. Layouts own derived coordinates. The composite
+React boundary owns the camera snapshots and canvas sizes. It derives the
+frontier, cone window, and radial membership before rendering either view, so a
+child effect cannot introduce a stale radial frame.
 
 ## 1. Index once
 
@@ -31,7 +34,13 @@ view, so a child effect cannot introduce a stale radial frame.
 iterative breadth-first traversal. Siblings use stable ID ordering, so equal
 inputs never depend on object enumeration or browser timing.
 
-## 2. Find an integer frontier boundary
+## 2. Derive the frontier and find its integer boundary
+
+The camera's radial offset plus its visible world span determines how many
+depth bands fit in the cone. Expansion is adaptive: the first half of a new
+band holds the previous coordinate set; the second half maps linearly to the
+next set. This prevents a barely exposed column from immediately repacking the
+whole tree.
 
 For a level `k`, depth-first traversal stops at either:
 
@@ -61,6 +70,11 @@ child happened to be inserted last.
 Nodes below the current boundary retain their real X depth but inherit their
 boundary ancestor's Y. They are spatially collapsed without corrupting
 hierarchy depth.
+
+When a parent center would fall outside the vertical camera interval, its
+display center is clamped to the nearest viewport edge within the legal span
+between its canonical center and extreme child. This keeps context visible
+without changing X depth.
 
 ## 4. Interpolate whole layouts
 
@@ -98,21 +112,26 @@ At frontier `k`, a deeper point is placed on its ancestor at depth `k`. Between
 canonical points. The visual result is a set of branches being pulled out of
 their parent rather than appearing from unrelated locations.
 
-The cone and radial layouts share reveal values and visible IDs. There is no
-second radial collapse state to become stale.
+The cone and radial layouts share one coordinate snapshot. Every node remains
+mounted; there is no second radial collapse state to become stale.
 
 ## 7. Project the cone camera back onto the circle
 
 After cone layout, the camera transform and canvas size define a world-space
 rectangle. A card belongs to the projection window when its layout rectangle
 intersects that world rectangle. This produces an exact discrete ID set after
-every pan, zoom, resize, or frontier change.
+every pan, zoom, resize, or automatically derived frontier change.
 
 The radial view converts the minimum and maximum member depths to annular ring
 boundaries and the ordered member angles to a sector envelope. Geometry makes
-the viewfinder legible; the discrete set remains authoritative. Radial nodes
-and edges outside that set are hidden, so the points shown by the radial
-viewfinder are exactly the cards currently present in the cone viewport.
+the viewfinder legible; the discrete set remains authoritative. All radial
+nodes and edges stay visible. Membership styling distinguishes exactly the
+cards currently present in the cone viewport.
+
+The sector's exact polar bounds define a follow camera that fits and centers
+the complete shape. Direct radial camera input becomes a manual override. The
+next cone camera change discards that override and derives a new follow camera
+from the new sector in the same composite state.
 
 ## Complexity
 
@@ -122,6 +141,23 @@ depth `D`; configured depth is capped at 64. Only lower, upper, and canonical
 sets are produced for a request—there is no cache of every possible level.
 
 The React layer keeps the topology mounted so frontier motion preserves node
-identity, while opacity and pointer eligibility expose the current prefix. At
-1,000 nodes, consumer renderer complexity and label density become the dominant
-costs.
+identity. At 1,000 nodes, consumer renderer complexity and radial label density
+become the dominant costs.
+
+The committed camera state is also the painted state. Position changes do not
+run through a second CSS transform tween, because that would make hit testing
+and cursor anchoring observe different coordinate frames.
+
+## Interaction motion
+
+Wheel, drag, and button targets feed one request-animation-frame loop. Two
+low-pass stages preserve velocity while repeated events replace the live target
+without restarting from an older endpoint. Before publishing a candidate, the
+loop projects every currently or newly visible card corner into screen space.
+If any corner would exceed the per-frame pixel budget, it backs off the camera
+interpolation ratio and verifies the resulting geometry again.
+
+Pointer release cancels the remaining target and retains the last committed
+camera. A new gesture therefore starts from what the user actually sees. At
+the complete overview boundary, cursor anchoring yields to the centered Fit
+camera so no stale vertical offset survives a saturated zoom-out gesture.

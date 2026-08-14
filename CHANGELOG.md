@@ -9,6 +9,20 @@ versioning after its first tagged release.
   zoom changes.
 - Present branch, depth, and node count as range controls in the demo.
 - Capture wheel zoom inside projection canvases without scrolling the page.
+- Derive the presentation frontier automatically from the cone camera instead
+  of exposing a manual depth slider.
+- Keep the complete topology mounted while the frontier collapses coordinates,
+  and synchronize the radial pull/viewfinder in the same render.
+- Port fixed-anchor wheel sessions, direct card dragging, bounded terminal
+  camera motion, and post-drag click suppression from the source implementation.
+- Restore the source rAF motion filter, live gesture retargeting, painted-frame
+  release behavior, and canonical overview reset.
+- Coalesce radial camera updates per frame and restore three-band point focus.
+- Keep all radial nodes visible, move them with the automatic frontier, and
+  follow the complete centered cone sector until direct radial camera input.
+- Compact the named generation panel into the first-screen workspace, place
+  growth direction beside Balance, and clamp node count through its slider.
+- Add practical skill-tree, education, documentation, and planning examples.
 
 ## 0.1.0 - 2026-08-13
 

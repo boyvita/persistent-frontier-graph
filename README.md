@@ -7,13 +7,11 @@
 
 ![Persistent Frontier Graph — one tree, two synchronized projections](public/social-card.svg)
 
-**One tree. Two synchronized projections. Zero disappearing context.**
-
 Persistent Frontier Graph is an extensible React and TypeScript library for
-exploring large rooted trees as a left-to-right cone and a radial tree. One
-fractional *frontier* controls both layouts: advancing it expands complete
-coordinate sets, while reducing it pulls descendants back into their nearest
-visible ancestor.
+exploring large rooted trees as a left-to-right cone and a radial tree. It is a
+compact, convenient way to keep both readable views synchronized. The cone
+camera derives a fractional coordinate frontier automatically, so navigation
+expands or collapses both projections without a separate depth control.
 
 [Open the interactive playground](https://boyvita.github.io/persistent-frontier-graph/) ·
 [Read the specification](docs/specification.md) ·
@@ -28,10 +26,10 @@ the useful invariants of both:
 
 - hierarchy depth always maps to a stable column and ring;
 - sibling subtrees never interleave;
-- every parent stays centered between its extreme visible children;
-- fractional frontier changes interpolate complete layouts, rather than
+- every parent stays centered between its extreme boundary children;
+- camera-derived frontier changes interpolate complete layouts, rather than
   moving nodes independently;
-- topology stays mounted while reveal changes, preserving stable node identity;
+- topology stays mounted while coordinates collapse, preserving stable node identity;
 - the cone and radial views derive from the same immutable snapshot;
 - the radial viewfinder contains exactly the nodes inside the current cone camera;
 - generated random trees remain reproducible through an explicit seed.
@@ -54,11 +52,9 @@ The Git install runs the library build and provides ESM plus TypeScript
 declarations. React and React DOM are peer dependencies.
 
 ```tsx
-import { useState } from "react";
 import {
   PersistentFrontierGraph,
   generateTree,
-  indexTree,
 } from "persistent-frontier-graph";
 import "persistent-frontier-graph/styles.css";
 
@@ -72,27 +68,8 @@ const generated = generateTree({
 });
 
 export function Example() {
-  const [frontier, setFrontier] = useState(3.5);
   if (!generated.ok) return <p>{generated.error.message}</p>;
-  const maximumDepth = indexTree(generated.tree).maximumDepth;
-
-  return (
-    <>
-      <input
-        aria-label="Visible depth"
-        type="range"
-        min={0}
-        max={maximumDepth}
-        step={0.1}
-        value={frontier}
-        onChange={(event) => setFrontier(Number(event.target.value))}
-      />
-      <PersistentFrontierGraph
-        tree={generated.tree}
-        frontier={frontier}
-      />
-    </>
-  );
+  return <PersistentFrontierGraph tree={generated.tree} />;
 }
 ```
 
@@ -109,8 +86,12 @@ export function Example() {
 
 An impossible request returns a typed `capacity_exceeded` result. It never
 silently changes `nodeCount`, depth, or branching limits. The playground's
-**Regenerate** button creates a new seed and replaces the tree only after a
-valid result is complete.
+Number of nodes slider prevents that invalid state by using the current shape
+capacity as its live maximum. **Regenerate** creates a new seed and replaces
+the tree only after a valid result is complete.
+
+Typical uses include skill progression trees, educational prerequisite and
+knowledge maps, documentation taxonomies, and roadmap or decision trees.
 
 ## Extensibility
 
@@ -144,20 +125,24 @@ The complete contract lives in the [API reference](docs/api.md).
 
 ## Accessibility and performance
 
-The visual canvases support pointer pan, cursor-anchored wheel zoom, responsive
-fit, and zoom buttons. The bundled component keeps the cone and radial canvases
-at an equal 50/50 width across zoom and responsive viewport changes. The
-composite derives the cone camera's exact
-card-intersection set before rendering either view; the radial annular sector
-shows only that set while the shared frontier continues to control depth and
-pull motion. A synchronized native node
+The visual canvases support direct card or background drag, cursor-anchored
+wheel navigation, responsive fit, and zoom buttons. Wheel gestures are captured
+inside a canvas instead of scrolling the document. Retargetable frame-bounded
+motion keeps the painted cards and gesture state in one coordinate frame. The
+bundled component keeps the cone and radial canvases at an equal 50/50 width
+across zoom and responsive viewport changes. The composite derives the cone
+camera's exact card-intersection set before rendering either view; the radial annular sector
+marks exactly that set while every radial node remains visible. Cone movement
+centers and fits the complete sector; direct radial camera input temporarily
+overrides following. The camera-derived frontier controls coordinate collapse
+and pull motion. Every topology node remains mounted. A synchronized native node
 navigator provides a keyboard and assistive-technology equivalent even when
 hundreds of graph points are packed into a small viewport. Focus indicators,
 reduced-motion behavior, labels, and WCAG 2.2 automated checks are part of CI.
 
 The core uses immutable inputs, iterative traversal, and linear-size output.
 Tests cover a 1,000-node tree. Rendering cost still depends on the consumer's
-node renderer and current visible frontier; benchmark your own presentation.
+node renderer and visible camera window; benchmark your own presentation.
 
 ## Development
 
