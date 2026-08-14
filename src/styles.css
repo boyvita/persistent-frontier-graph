@@ -122,7 +122,6 @@
   position: absolute;
   top: 0;
   transform-origin: 0 0;
-  transition: transform 180ms cubic-bezier(0.2, 0.9, 0.2, 1);
   width: 0;
   will-change: transform;
 }
@@ -152,7 +151,7 @@
   stroke: var(--pfg-line);
   stroke-linecap: round;
   stroke-width: 1.5;
-  transition: d 420ms cubic-bezier(0.2, 0.9, 0.2, 1), opacity 260ms ease;
+  transition: opacity 160ms ease;
   vector-effect: non-scaling-stroke;
 }
 
@@ -188,8 +187,7 @@
   position: absolute;
   top: 0;
   transition:
-    transform 420ms cubic-bezier(0.2, 0.9, 0.2, 1),
-    opacity 260ms ease,
+    opacity 160ms ease,
     border-color 160ms ease,
     background 160ms ease;
   will-change: transform;
@@ -240,10 +238,6 @@
   padding: 0.12rem 0.25rem;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.pfg-node.is-frontier {
-  border-color: rgba(186, 252, 74, 0.7);
 }
 
 .pfg-node.is-selected {

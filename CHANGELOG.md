@@ -9,6 +9,12 @@ versioning after its first tagged release.
   zoom changes.
 - Present branch, depth, and node count as range controls in the demo.
 - Capture wheel zoom inside projection canvases without scrolling the page.
+- Derive the presentation frontier automatically from the cone camera instead
+  of exposing a manual depth slider.
+- Keep the complete topology mounted while the frontier collapses coordinates,
+  and synchronize the radial pull/viewfinder in the same render.
+- Port fixed-anchor wheel sessions, direct card dragging, bounded terminal
+  camera motion, and post-drag click suppression from the source implementation.
 
 ## 0.1.0 - 2026-08-13
 

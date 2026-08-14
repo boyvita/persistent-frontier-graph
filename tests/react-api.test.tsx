@@ -21,9 +21,10 @@ function tree() {
 }
 
 describe("React API", () => {
-  it("renders both projections from one frontier and synchronizes selection", () => {
+  it("derives the frontier automatically and synchronizes selection", () => {
     const onSelected = vi.fn();
-    render(<PersistentFrontierGraph frontier={1} onSelectedIdChange={onSelected} tree={tree()} />);
+    const { container } = render(<PersistentFrontierGraph onSelectedIdChange={onSelected} tree={tree()} />);
+    expect(container.querySelector(".pfg-graph")).toHaveAttribute("data-frontier-mode", "auto");
     const cone = screen.getByRole("region", { name: "Persistent frontier cone projection" });
     const radial = screen.getByRole("region", { name: "Synchronized radial tree" });
     expect(cone.querySelectorAll("[data-node-id]")).toHaveLength(radial.querySelectorAll("[data-node-id]").length);

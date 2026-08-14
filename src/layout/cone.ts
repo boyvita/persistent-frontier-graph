@@ -19,6 +19,11 @@ export interface ConeLayoutOptions {
   readonly nodeSize?: Size;
 }
 
+export interface ConeProjectionContext {
+  readonly verticalCenter: number;
+  readonly verticalSpan: number;
+}
+
 export interface ConeLayoutResult<TData> extends FrontierProjection<TData> {
   readonly bounds: {
     readonly height: number;
@@ -26,9 +31,10 @@ export interface ConeLayoutResult<TData> extends FrontierProjection<TData> {
     readonly minimumY: number;
     readonly width: number;
   };
+  readonly clampedNodeIds: ReadonlySet<NodeId>;
 }
 
-const DEFAULT_NODE_SIZE: Size = { height: 64, width: 208 };
+export const DEFAULT_CONE_NODE_SIZE: Size = { height: 64, width: 208 };
 
 function boundaryAtLevel<TData>(index: TreeIndex<TData>, level: number): readonly NodeId[] {
   const result: NodeId[] = [];
@@ -111,13 +117,14 @@ export function layoutCone<TData>(
   index: TreeIndex<TData>,
   snapshot: FrontierSnapshot,
   suppliedOptions: ConeLayoutOptions = {},
+  projectionContext?: ConeProjectionContext,
 ): ConeLayoutResult<TData> {
   const options: Required<ConeLayoutOptions> = {
     columnGap: suppliedOptions.columnGap ?? 74,
     hierarchyGap: suppliedOptions.hierarchyGap ?? 12,
     localGap: suppliedOptions.localGap ?? 12,
     maximumHierarchyGap: suppliedOptions.maximumHierarchyGap ?? 112,
-    nodeSize: suppliedOptions.nodeSize ?? DEFAULT_NODE_SIZE,
+    nodeSize: suppliedOptions.nodeSize ?? DEFAULT_CONE_NODE_SIZE,
   };
   const lower = coordinateSet(index, snapshot.lowerLevel, options);
   const upper = coordinateSet(index, snapshot.upperLevel, options);
@@ -144,7 +151,39 @@ export function layoutCone<TData>(
     });
   }
 
-  const visible = nodes.filter((node) => isRevealed(node.reveal));
+
+  const clampedNodeIds = new Set<NodeId>();
+  if (projectionContext && projectionContext.verticalSpan > 0) {
+    const topBoundary = projectionContext.verticalCenter - projectionContext.verticalSpan / 2 + options.nodeSize.height / 2;
+    const bottomBoundary = projectionContext.verticalCenter + projectionContext.verticalSpan / 2 - options.nodeSize.height / 2;
+    for (let cursor = index.orderedIds.length - 1; cursor >= 0; cursor -= 1) {
+      const id = index.orderedIds[cursor];
+      if (!id) continue;
+      const parent = positions.get(id);
+      const children = (index.childrenById.get(id) ?? [])
+        .map((child) => positions.get(child.id))
+        .filter((point): point is Point => Boolean(point));
+      if (!parent || children.length === 0) continue;
+      const canonicalCenter = parent.y;
+      if (canonicalCenter >= topBoundary && canonicalCenter <= bottomBoundary) continue;
+      const extremeChild = canonicalCenter < topBoundary
+        ? Math.max(...children.map((child) => child.y))
+        : Math.min(...children.map((child) => child.y));
+      const boundary = canonicalCenter < topBoundary ? topBoundary : bottomBoundary;
+      const minimum = Math.min(canonicalCenter, extremeChild);
+      const maximum = Math.max(canonicalCenter, extremeChild);
+      const target = Math.min(maximum, Math.max(minimum, boundary));
+      if (Math.abs(target - canonicalCenter) <= 0.001) continue;
+      positions.set(id, { ...parent, y: target });
+      clampedNodeIds.add(id);
+    }
+  }
+
+  const adjustedNodes = nodes.map((node) => {
+    const position = positions.get(node.node.id);
+    return position && position !== node.position ? { ...node, position } : node;
+  });
+  const visible = adjustedNodes.filter((node) => isRevealed(node.reveal));
   const minimumY = Math.min(0, ...visible.map((node) => node.position.y - options.nodeSize.height / 2));
   const maximumY = Math.max(0, ...visible.map((node) => node.position.y + options.nodeSize.height / 2));
   return {
@@ -154,10 +193,11 @@ export function layoutCone<TData>(
       minimumY,
       width: index.maximumDepth * (options.nodeSize.width + options.columnGap) + options.nodeSize.width,
     },
+    clampedNodeIds,
     edges: edgesFromPositions(index, positions, snapshot.revealById),
     frontier: snapshot.frontier,
     maximumDepth: index.maximumDepth,
-    nodes,
+    nodes: adjustedNodes,
     visibleNodeIds: snapshot.visibleNodeIds,
   };
 }

@@ -5,7 +5,7 @@ ends and application policy begins.
 
 | Example | Demonstrates |
 |---|---|
-| [`basic/App.tsx`](basic/App.tsx) | Generated tree, controlled frontier, and both synchronized projections |
+| [`basic/App.tsx`](basic/App.tsx) | Generated tree with an automatic camera frontier and synchronized projections |
 | [`custom-nodes/App.tsx`](custom-nodes/App.tsx) | Domain data, custom node renderer, controlled selection, and revision-bound action |
 | [`headless/layout.ts`](headless/layout.ts) | Framework-independent cone and radial coordinates from one snapshot |
 

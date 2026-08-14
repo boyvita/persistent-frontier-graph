@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   createFrontierGraphModel,
+  deriveAutomaticFrontier,
   deriveProjectionViewportWindow,
   deriveRadialProjectionSector,
   generateTree,
@@ -61,13 +62,13 @@ describe("persistent frontier layouts", () => {
     }
   });
 
-  it("pulls unrevealed radial descendants into their frontier ancestor", () => {
+  it("pulls deeper radial descendants into their coordinate-boundary ancestor", () => {
     const model = createFrontierGraphModel(fixture(), 2);
     const byId = new Map(model.radial.nodes.map((node) => [node.node.id, node]));
     const deep = model.radial.nodes.find((node) => node.depth >= 4);
     expect(deep).toBeDefined();
     const ancestor = deep ? byId.get(deep.frontierAncestorId) : undefined;
-    expect(deep?.reveal).toBe(0);
+    expect(deep?.reveal).toBe(1);
     expect(deep?.position).toEqual(ancestor?.canonicalPosition);
   });
 
@@ -131,7 +132,7 @@ describe("persistent frontier layouts", () => {
     expect(sector?.outerRadius).toBeGreaterThan(sector?.innerRadius ?? 0);
   });
 
-  it("uses the same positive-reveal predicate for tiny fractional frontiers", () => {
+  it("keeps every node mounted and revealed while coordinates collapse", () => {
     const model = createFrontierGraphModel(fixture(), 2.0005);
     const window = deriveProjectionViewportWindow(
       model.cone,
@@ -140,14 +141,32 @@ describe("persistent frontier layouts", () => {
       { height: 64, width: 208 },
     );
     const sector = deriveRadialProjectionSector(window, model.radial);
-    const tinyRevealIds = model.cone.nodes
-      .filter((node) => node.reveal > 0 && node.reveal < 0.001)
-      .map((node) => node.node.id);
-
-    expect(tinyRevealIds.length).toBeGreaterThan(0);
+    expect(model.cone.nodes.every((node) => node.reveal === 1)).toBe(true);
     expect(window.visibleNodeIds).toEqual(model.snapshot.visibleNodeIds);
     expect(sector?.visibleNodeIds).toEqual(model.snapshot.visibleNodeIds);
-    for (const id of tinyRevealIds) expect(sector?.visibleNodeIds.has(id)).toBe(true);
+  });
+
+  it("marks only coordinate-boundary representatives as frontier nodes", () => {
+    const model = createFrontierGraphModel(fixture(), 2);
+    for (const id of model.snapshot.frontierNodeIds) {
+      const depth = model.index.depthById.get(id) ?? 0;
+      const children = model.index.childrenById.get(id) ?? [];
+      expect(depth === 2 || children.length === 0).toBe(true);
+    }
+    expect(model.snapshot.frontierNodeIds.size).toBeLessThan(model.tree.nodes.length);
+  });
+
+  it("holds an automatic coordinate set for the first half of a depth band", () => {
+    const nodeWidth = 208;
+    const depthSlot = 282;
+    const offset = 0;
+    const spanAt = (capacity: number) => nodeWidth / 2 + capacity * depthSlot;
+
+    expect(deriveAutomaticFrontier(offset, spanAt(2), 6, nodeWidth, depthSlot)).toBe(2);
+    expect(deriveAutomaticFrontier(offset, spanAt(2.49), 6, nodeWidth, depthSlot)).toBe(2);
+    expect(deriveAutomaticFrontier(offset, spanAt(2.5), 6, nodeWidth, depthSlot)).toBe(2);
+    expect(deriveAutomaticFrontier(offset, spanAt(2.75), 6, nodeWidth, depthSlot)).toBeCloseTo(2.5);
+    expect(deriveAutomaticFrontier(offset, spanAt(3), 6, nodeWidth, depthSlot)).toBe(3);
   });
 
   it("lays out a thousand nodes within a bounded headless budget", () => {

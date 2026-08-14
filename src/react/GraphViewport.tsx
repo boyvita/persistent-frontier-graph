@@ -12,19 +12,22 @@ import type {
   ProjectionViewportWindow,
   RadialProjectionSector,
   Size,
-  ViewportState,
 } from "../core/types.js";
 import { isRevealed } from "../frontier/visibility.js";
-import { usePannableViewport } from "./usePannableViewport.js";
+import type { PannableViewport } from "./usePannableViewport.js";
+
+type ViewportController = Pick<
+  PannableViewport,
+  "handlers" | "isDragging" | "onWheel" | "reset" | "shouldSuppressClick" | "viewport" | "zoomBy"
+>;
 
 export interface GraphViewportProps<TData> {
   readonly ariaLabel: string;
+  readonly camera: ViewportController;
   readonly className?: string | undefined;
   readonly edgePath?: ((source: Point, target: Point) => string) | undefined;
   readonly getNodeLabel?: NodeLabelGetter<TData> | undefined;
-  readonly homeViewport: ViewportState;
   readonly onSelect: (id: NodeId) => void;
-  readonly onViewportChange: (viewport: ViewportState) => void;
   readonly onViewportSizeChange?: ((size: Size) => void) | undefined;
   readonly overlays?: readonly GraphOverlay<TData>[] | undefined;
   readonly projection: FrontierProjection<TData>;
@@ -34,7 +37,6 @@ export interface GraphViewportProps<TData> {
   readonly selectedId: NodeId | null;
   readonly tree: FrontierTree<TData>;
   readonly view: FrontierView;
-  readonly viewport: ViewportState;
   readonly viewportWindow?: ProjectionViewportWindow | null | undefined;
 }
 
@@ -93,12 +95,11 @@ function radialSectorPath(sector: RadialProjectionSector): string {
 
 export function GraphViewport<TData>({
   ariaLabel,
+  camera,
   className,
   edgePath = defaultEdgePath,
   getNodeLabel,
-  homeViewport,
   onSelect,
-  onViewportChange,
   onViewportSizeChange,
   overlays = [],
   projection,
@@ -108,10 +109,8 @@ export function GraphViewport<TData>({
   selectedId,
   tree,
   view,
-  viewport,
   viewportWindow,
 }: GraphViewportProps<TData>) {
-  const camera = usePannableViewport(viewport, homeViewport, onViewportChange);
   const canvasRef = useRef<HTMLDivElement>(null);
   const byId = useMemo(() => new Map(tree.nodes.map((node) => [node.id, node])), [tree]);
   const visibleNodes = projection.nodes.filter((node) => isRevealed(node.reveal));
@@ -149,12 +148,11 @@ export function GraphViewport<TData>({
     <section className={`pfg-viewport ${className ?? ""}`} aria-label={ariaLabel} data-pfg-view={view}>
       <header className="pfg-viewport__header">
         <div>
-          <strong>{view === "cone" ? "Persistent frontier" : "Radial tree"}</strong>
+          <strong>{view === "cone" ? "Mind map" : "Radial tree"}</strong>
           <span>
             {radialWindowCount === null
-              ? `${visibleNodes.length.toLocaleString()} visible`
-              : `${radialWindowCount.toLocaleString()} in cone viewport · ${visibleNodes.length.toLocaleString()} revealed`}
-            {` · depth ${projection.frontier.toFixed(1)}`}
+              ? `${visibleNodes.length.toLocaleString()} nodes`
+              : `${radialWindowCount.toLocaleString()} in mind-map viewport / ${visibleNodes.length.toLocaleString()} nodes`}
           </span>
         </div>
         <div className="pfg-camera-controls" data-pfg-interactive>
@@ -241,9 +239,10 @@ export function GraphViewport<TData>({
                   data-in-viewport={view === "cone"
                     ? (viewportWindow?.visibleNodeIds.has(projected.node.id) ? "true" : "false")
                     : undefined}
-                  data-pfg-interactive
                   key={projected.node.id}
-                  onClick={() => onSelect(projected.node.id)}
+                  onClick={() => {
+                    if (!camera.shouldSuppressClick()) onSelect(projected.node.id);
+                  }}
                   style={{
                     opacity: isVisible ? projected.reveal : 0,
                     pointerEvents: isVisible ? undefined : "none",

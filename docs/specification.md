@@ -10,9 +10,9 @@ The library presents one immutable rooted tree through two synchronized views:
 1. a cone projection with hierarchy depth on the horizontal axis;
 2. a radial projection with hierarchy depth on concentric rings.
 
-A controlled fractional `frontier` determines the revealed hierarchy depth in
-both views. The library provides generation, validation, headless layout, React
-presentation, and extension contracts.
+The cone camera automatically derives a fractional coordinate frontier for
+both views. The library provides generation, validation, headless layout,
+React presentation, and extension contracts.
 
 The following are explicit non-goals:
 
@@ -104,7 +104,7 @@ replace it with the owning document revision.
 Regeneration is an application transaction. The demo creates a fresh seed,
 builds a complete candidate, and replaces the current tree only after success.
 On failure, the previous valid graph remains visible and the error is announced.
-Selection and frontier reset with a successful new tree.
+Selection and both cameras reset with a successful new tree.
 
 ### 3.6 Demo controls
 
@@ -115,24 +115,26 @@ toggle (`uniform`) and continuous growth-direction control
 
 ## 4. Frontier
 
-For maximum hierarchy depth `D`, requested frontier `F` is clamped to `[0,D]`.
+For maximum hierarchy depth `D`, coordinate frontier `F` is clamped to `[0,D]`.
+The React presentation derives it from the outer edge of the cone camera's
+visible radial interval. The first half of each new depth band retains the
+previous integer coordinate set. The second half interpolates from that set to
+the next one. A caller MAY supply the optional `frontier` prop only as a fixed
+diagnostic override; normal interaction MUST NOT require a frontier control.
+
 Define:
 
 - `L = floor(F)`;
 - `U = ceil(F)`;
 - `α = F - L`.
 
-Nodes at depth `≤ L` have reveal `1`. Nodes at depth `U` have reveal `α` when
-`U > L`. Deeper nodes have reveal `0`. Terminal nodes shall remain terminal at
-their actual shallow depth.
+Every topology node and containment edge has reveal `1` and remains mounted.
+The frontier changes coordinates, not topology membership. Terminal nodes
+remain terminal at their actual shallow depth.
 
-A node or edge is revealed exactly when its reveal value is greater than zero.
-Implementations MUST NOT apply different display, viewport, or snapshot epsilon
-thresholds to positive fractional reveals.
-
-The shared snapshot MUST contain the frontier, lower and upper levels,
-per-node reveal, the nearest ancestor at depth `L`, visible IDs, and frontier
-IDs. Both layouts MUST use the same snapshot instance for a model derivation.
+The shared snapshot MUST contain the frontier, lower and upper levels, the
+nearest ancestor at depth `L`, all topology IDs, and coordinate-frontier IDs.
+Both layouts MUST use the same snapshot instance for a model derivation.
 
 ## 5. Cone layout
 
@@ -160,8 +162,8 @@ This preserves contiguous subtrees and prevents sibling interleaving.
 The final cone coordinate at `F` MUST linearly interpolate the complete sets at
 `L` and `U` using `α`. Independent per-node repacking is forbidden.
 All topology nodes and containment edges MUST remain mounted across frontier
-changes; reveal and viewport membership affect opacity and interaction, not
-identity or component keys.
+changes; viewport membership affects the radial viewfinder, not identity or
+component keys.
 
 ## 6. Radial layout
 
@@ -181,22 +183,23 @@ Deeper nodes remain collapsed. This is the radial “pull” visualization.
 
 ## 7. Synchronization and state ownership
 
-The immutable tree and controlled frontier are structural authorities.
+The immutable tree is the structural authority. The coordinate frontier is a
+pure derivation of the cone camera unless a fixed diagnostic override is used.
 Selection is controlled or locally managed by the composite React component.
-View cameras are ephemeral state and MUST NOT mutate the tree or frontier. The
+View cameras are ephemeral state and MUST NOT mutate the tree. The
 radial camera remains independently pannable and zoomable, but radial sector
 membership is authoritative from the cone camera.
 
-The cone and radial views MUST agree on frontier-revealed node IDs in one React
-commit. In addition, the cone camera MUST derive the exact set of revealed
-cards whose rectangles intersect its current viewport. The radial annular
+The cone and radial views MUST use the same coordinate frontier in one React
+commit. The cone camera MUST derive the exact set of cards whose rectangles
+intersect its current viewport. The radial annular
 sector MUST receive that set in the same composite render and MUST show only
 its members; this is the projection-viewfinder contract. The sector geometry
 is the polar envelope of the exact discrete membership set.
 
 Changing selection in either visual canvas or the accessible navigator MUST
-update the shared selected node. If frontier reduction hides the selection,
-the nearest visible frontier ancestor becomes the effective selection.
+update the shared selected node. Camera movement MUST NOT substitute an
+ancestor selection because the topology remains present.
 
 ## 8. Extensibility
 
@@ -216,13 +219,26 @@ application code, not a sandbox.
 ## 9. Interaction and accessibility
 
 Both views MUST provide pointer pan, cursor-anchored wheel zoom, button-based
-zoom, and fit reset. Visual nodes MAY be densely packed below pointer target
+zoom, and fit reset. The cone MUST allow a drag to begin on either its
+background or a node card. A drag starts only after a three-pixel threshold,
+captures its pointer, and suppresses the release click after movement.
+Visual nodes MAY be densely packed below pointer target
 minimums; therefore the composite component MUST also expose a native keyboard
-node navigator with the same visible set and selection.
+node navigator containing the complete topology and shared selection.
 
 While the pointer is over either projection canvas, wheel input MUST be
 captured for cursor-anchored camera zoom and MUST NOT scroll the containing
 document. Wheel input outside the canvases retains normal page scrolling.
+One wheel gesture MUST retain its initial cursor/world anchor until 120 ms of
+inactivity. Cone coordinate changes during that gesture MUST compensate around
+the grabbed card when available, otherwise around a bounded field of nearby
+unclamped nodes. Horizontal cone motion MUST clamp before the first column and
+at the terminal extent independently of zoom.
+The cone minimum zoom MUST equal its responsive fit zoom, so zooming out cannot
+shrink the complete overview into unused space.
+The DOM transform and node coordinates MUST represent the committed camera
+state; an independent CSS position tween MUST NOT introduce hidden camera
+motion or detach gesture anchoring.
 
 The bundled composite MUST allocate equal horizontal width to the cone and
 radial canvases. The 50/50 split remains stable across camera zoom, browser
@@ -259,16 +275,21 @@ applications SHOULD wrap untrusted renderers in their own error boundary.
 - **LAYOUT-02:** Every visible parent is centered on its extreme children.
 - **LAYOUT-03:** Fractional cone coordinates equal interpolation of adjacent
   complete coordinate sets.
-- **RADIAL-01:** Unrevealed descendants coincide with their frontier ancestor;
-  the next ring moves continuously toward canonical points.
-- **SYNC-01:** Both layout projections use the exact same frontier-revealed ID set.
+- **RADIAL-01:** Descendants beyond the coordinate boundary coincide with their
+  boundary ancestor; the next ring moves continuously toward canonical points.
+- **SYNC-01:** Both layout projections use the same camera-derived coordinate
+  frontier in one composite render while every topology node remains mounted.
 - **VIEWPORT-01:** At every cone pan, zoom, resize, and frontier change, radial
-  sector membership equals the exact set of revealed cone cards intersecting
+  sector membership equals the exact set of cone cards intersecting
   the cone viewport.
 - **VIEWPORT-02:** Cone and radial canvases retain equal width across camera
   zoom and responsive viewport changes.
 - **VIEWPORT-03:** Wheel input over either canvas changes its camera zoom
   without changing document scroll position.
+- **VIEWPORT-04:** Cone wheel sessions keep one anchor; card/background drag
+  captures after its threshold and cannot emit an accidental selection.
+- **VIEWPORT-05:** Cone motion is clamped to its first and terminal extents
+  independently of zoom.
 - **EXT-01:** Custom renderers, edge appearance, overlays, labels, actions, and
   headless APIs work without changing the core tree.
 - **A11Y-01:** The full demo passes automated WCAG 2.2 AA checks and supports

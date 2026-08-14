@@ -12,11 +12,11 @@ interface Topic {
   readonly priority: "standard" | "important";
 }
 
-function TopicNode({ data, depth, isFrontier, view }: NodeRendererContext<Topic>) {
+function TopicNode({ data, depth, view }: NodeRendererContext<Topic>) {
   if (view === "radial") return <span title={data.label} />;
   return (
     <span>
-      <small>{isFrontier ? "frontier" : `depth ${depth}`}</small>
+      <small>{`depth ${depth}`}</small>
       <strong>{data.label}</strong>
       <em>{data.priority}</em>
     </span>
@@ -52,7 +52,6 @@ export function App() {
   return (
     <PersistentFrontierGraph
       actions={actions}
-      frontier={4.25}
       getNodeLabel={(node) => `${node.data.label}, ${node.data.priority}`}
       onAction={({ action, node, treeRevision }) => {
         // Send the producer-owned revision so stale structural actions can be rejected.

@@ -93,8 +93,16 @@ Invalid branch/depth input returns zero.
 
 ### `deriveFrontierSnapshot(index, frontier)`
 
-Clamps frontier and derives lower/upper levels, reveal values, frontier
-ancestors, visible IDs, and current frontier IDs.
+Clamps a coordinate frontier and derives lower/upper levels, coordinate
+ancestors, all topology IDs, and current coordinate-boundary IDs. Reveal is
+`1` for every node because a frontier collapses positions rather than removing
+topology.
+
+### `deriveAutomaticFrontier(radialOffset, radialSpan, maximumDepth, nodeWidth, depthSlot)`
+
+Converts the cone camera's visible radial interval into the adaptive fractional
+frontier used by the React presentation. `adaptiveFrontier` exposes the
+half-band hold/interpolation rule for custom camera implementations.
 
 ### `layoutCone(tree, index, snapshot, options?)`
 
@@ -112,6 +120,8 @@ interface ConeLayoutOptions {
 
 If the displayed node geometry differs from the defaults, pass matching
 `nodeSize`; presentation size and layout size are one contract.
+`CreateFrontierGraphModelOptions.coneProjection` optionally supplies the
+current vertical center and span for contextual parent clamping.
 
 ### `layoutRadial(tree, index, snapshot, options?)`
 
@@ -125,22 +135,23 @@ interface RadialLayoutOptions {
 }
 ```
 
-### `createFrontierGraphModel(tree, frontier, options?)`
+### `createFrontierGraphModel(tree, frontier?, options?)`
 
 Convenience function that validates/indexes once, creates one snapshot, and
-derives both layouts from it.
+derives both layouts from it. Omitting `frontier` uses the maximum tree depth;
+headless camera integrations should call `deriveAutomaticFrontier` explicitly.
 
 ### `deriveProjectionViewportWindow(projection, viewport, viewportSize, nodeSize)`
 
-Returns world bounds plus the exact set of revealed node rectangles that
-intersect a cone camera. Use the same `nodeSize` contract as cone layout.
+Returns world bounds plus the exact set of node rectangles that intersect a
+cone camera. Use the same `nodeSize` contract as cone layout.
 
 ### `deriveRadialProjectionSector(window, radial)`
 
 Returns `null` for an empty window. Otherwise returns the polar envelope and
 the same authoritative ID set for a radial viewfinder.
 
-### `useFrontierGraph(tree, frontier, options?)`
+### `useFrontierGraph(tree, frontier?, options?)`
 
 Memoized React hook around `createFrontierGraphModel`. Keep `tree` and layout
 options immutable so memoization remains meaningful.
@@ -154,12 +165,12 @@ Required props:
 | Prop | Meaning |
 |---|---|
 | `tree` | Immutable validated tree candidate |
-| `frontier` | Controlled fractional visible depth |
 
 Optional props:
 
 | Prop | Meaning |
 |---|---|
+| `frontier` | Optional fixed diagnostic override; omit for the automatic camera frontier |
 | `selectedId` | Controlled selected node; omit for local selection |
 | `onSelectedIdChange` | Selection callback from either view or navigator |
 | `getNodeLabel` | Accessible/application label for custom data |
@@ -173,11 +184,13 @@ Optional props:
 | `onProjectionViewportChange` | Notification with the exact cone camera window after its synchronized composite commit |
 | `className` | Consumer class on the composite root |
 
-The built-in radial sector hides nodes outside the latest cone camera window;
+The cone supports background and direct-card dragging plus fixed-anchor wheel
+sessions. It captures wheel input so navigating either canvas does not scroll
+the document. The built-in radial sector hides nodes outside the latest cone camera window;
 its independent camera changes only how that sector is framed. The visual node
 body is not the accessibility name. Supply `getNodeLabel` for
 non-standard data. The component's native node navigator mirrors the current
-visible set for keyboard and assistive-technology access.
+complete topology for keyboard and assistive-technology access.
 
 ## Extension contracts
 
@@ -186,6 +199,9 @@ visible set for keyboard and assistive-technology access.
 Contains `node`, `data`, `view`, `depth`, `reveal`, `isFrontier`, `isSelected`,
 and `select`. It renders visual content; put durable operations in `actions` so
 they remain accessible outside a scaled canvas.
+
+`isFrontier` identifies the current coordinate boundary; it is not a visibility
+flag. `reveal` is `1` for every mounted topology node in the current contract.
 
 The default node shell selects on click. When a custom renderer adds its own
 click handler, pass the click event to `select`; it stops propagation before

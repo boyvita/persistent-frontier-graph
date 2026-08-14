@@ -23,7 +23,7 @@ function TopicNode(context: NodeRendererContext<Topic>) {
 
   return (
     <span className="topic-node" onClick={(event) => context.select(event)}>
-      <small>{context.isFrontier ? "FRONTIER" : `LEVEL ${context.depth}`}</small>
+      <small>{`LEVEL ${context.depth}`}</small>
       <strong>{context.data.title}</strong>
       <em>{context.data.status}</em>
     </span>
@@ -42,7 +42,6 @@ action bar and supply an explicit label:
 ```tsx
 <PersistentFrontierGraph
   tree={tree}
-  frontier={frontier}
   renderNode={TopicNode}
   getNodeLabel={(node) => `${node.data.title}, ${node.data.status}`}
 />
@@ -102,7 +101,6 @@ const actions: NodeAction<Topic>[] = [
 
 <PersistentFrontierGraph
   tree={tree}
-  frontier={frontier}
   actions={actions}
   onAction={({ action, node, treeRevision }) => {
     dispatch({ type: action.id, nodeId: node.id, expectedRevision: treeRevision });
@@ -145,8 +143,9 @@ snapshot and are safe to render with SVG, Canvas, WebGL, PDF, or server-side
 export code.
 
 If you call `layoutCone` and `layoutRadial` separately, create one
-`deriveFrontierSnapshot` and pass it to both. Two independently rounded frontier
-values can create a split-brain visualization.
+`deriveFrontierSnapshot` and pass it to both. A custom interactive camera can
+obtain that value through `deriveAutomaticFrontier`; two independently derived
+frontier values can create a split-brain visualization.
 
 For a custom presentation that keeps the camera viewfinder, call
 `deriveProjectionViewportWindow` with the cone camera and then

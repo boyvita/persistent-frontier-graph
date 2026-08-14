@@ -4,7 +4,7 @@ import { createFrontierGraphModel, type CreateFrontierGraphModelOptions } from "
 
 export function useFrontierGraph<TData>(
   tree: FrontierTree<TData>,
-  frontier: number,
+  frontier?: number,
   options?: CreateFrontierGraphModelOptions,
 ) {
   return useMemo(() => createFrontierGraphModel(tree, frontier, options), [frontier, options, tree]);

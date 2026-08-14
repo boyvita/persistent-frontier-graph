@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
+import { useMemo, useState, type ChangeEvent } from "react";
 import {
   PersistentFrontierGraph,
   generateTree,
@@ -46,11 +46,11 @@ function buildTree(options: DemoOptions, seed: string) {
   return generateTree({ ...options, seed } satisfies GenerateTreeOptions);
 }
 
-function DemoNode({ data, depth, isFrontier, view }: NodeRendererContext<GeneratedNodeData>) {
+function DemoNode({ data, depth, view }: NodeRendererContext<GeneratedNodeData>) {
   if (view === "radial") return <span>{data.label}</span>;
   return (
     <span className="demo-node">
-      <span className="demo-node__eyebrow">{isFrontier ? "FRONTIER" : `LEVEL ${depth}`}</span>
+      <span className="demo-node__eyebrow">{`LEVEL ${depth}`}</span>
       <strong>{data.label}</strong>
       <small>{data.ordinal.toString().padStart(4, "0")}</small>
     </span>
@@ -150,17 +150,10 @@ export function App() {
     return initial.tree;
   });
   const [error, setError] = useState<string | null>(null);
-  const [frontier, setFrontier] = useState(2.5);
   const [selectedId, setSelectedId] = useState<string>(tree.rootId);
-  const [notice, setNotice] = useState("Both views share one projection state.");
-  const [isReplaying, setIsReplaying] = useState(false);
-  const replayTimer = useRef<number | null>(null);
+  const [notice, setNotice] = useState("Drag cards or the background. Use the wheel to navigate without scrolling the page.");
   const index = useMemo(() => indexTree(tree), [tree]);
   const capacity = treeCapacity(draft.maxBranches, draft.maxDepth);
-
-  useEffect(() => () => {
-    if (replayTimer.current !== null) window.clearInterval(replayTimer.current);
-  }, []);
 
   const regenerate = () => {
     const candidateSeed = nextSeed();
@@ -169,31 +162,11 @@ export function App() {
       setError(result.error.message);
       return;
     }
-    if (replayTimer.current !== null) window.clearInterval(replayTimer.current);
-    replayTimer.current = null;
-    setIsReplaying(false);
     setTree(result.tree);
     setSeed(result.seed);
-    setFrontier(Math.min(2.5, indexTree(result.tree).maximumDepth));
     setSelectedId(result.tree.rootId);
     setError(null);
     setNotice(`Generated ${result.tree.nodes.length} nodes from seed ${result.seed}.`);
-  };
-
-  const replay = () => {
-    if (replayTimer.current !== null) window.clearInterval(replayTimer.current);
-    setIsReplaying(true);
-    setFrontier(0);
-    let next = 0;
-    replayTimer.current = window.setInterval(() => {
-      next = Math.min(index.maximumDepth, next + 0.5);
-      setFrontier(next);
-      if (next >= index.maximumDepth) {
-        if (replayTimer.current !== null) window.clearInterval(replayTimer.current);
-        replayTimer.current = null;
-        setIsReplaying(false);
-      }
-    }, 430);
   };
 
   const handleAction = async (actionId: string, nodeId: string) => {
@@ -234,27 +207,10 @@ export function App() {
               onRegenerate={regenerate}
               onUpdate={(patch) => setDraft((current) => ({ ...current, ...patch }))}
             />
-            <div className="frontier-control">
-              <div>
-                <span>VISIBLE FRONTIER</span>
-                <strong>{frontier.toFixed(1)} <small>/ {index.maximumDepth}</small></strong>
-              </div>
-              <input
-                aria-label="Visible frontier depth"
-                max={index.maximumDepth}
-                min="0"
-                onChange={(event) => setFrontier(Number(event.target.value))}
-                step="0.1"
-                type="range"
-                value={frontier}
-              />
-              <button className="button button--small" disabled={isReplaying} onClick={replay} type="button">{isReplaying ? "Revealing…" : "Replay pull"}</button>
-            </div>
           </div>
 
           <PersistentFrontierGraph
             actions={DEMO_ACTIONS}
-            frontier={frontier}
             layoutOptions={LAYOUT_OPTIONS}
             onAction={(event) => { void handleAction(event.action.id, event.node.id); }}
             onSelectedIdChange={setSelectedId}
@@ -273,8 +229,8 @@ export function App() {
           <div className="mechanics-grid">
             <article><span>01</span><h3>Measure subtrees</h3><p>Leaf weight reserves one contiguous angular interval for every family. Siblings can grow without interleaving.</p></article>
             <article><span>02</span><h3>Freeze coordinate sets</h3><p>Each integer depth has a complete layout. Parents sit at the midpoint of their outermost visible children.</p></article>
-            <article><span>03</span><h3>Interpolate the frontier</h3><p>Fractional depth blends adjacent coordinate sets. Nodes move continuously instead of teleporting between layouts.</p></article>
-            <article><span>04</span><h3>Project twice</h3><p>The cone unwraps depth into columns. The radial tree pulls unrevealed descendants into the same frontier ancestor.</p></article>
+            <article><span>03</span><h3>Follow the camera</h3><p>The coordinate depth is derived from the projection window. Adjacent coordinate sets blend without a manual frontier control.</p></article>
+            <article><span>04</span><h3>Project twice</h3><p>The mind map unwraps depth into columns. The radial tree pulls deeper descendants into the same boundary ancestor.</p></article>
           </div>
         </section>
 
@@ -286,8 +242,8 @@ export function App() {
           <div className="rule-list">
             <div><Mark>01</Mark><p><strong>True depth stays true.</strong> Physical radius and screen density never masquerade as hierarchy depth.</p></div>
             <div><Mark>02</Mark><p><strong>Families never cross.</strong> Every subtree owns one contiguous interval in the circular and cone layouts.</p></div>
-            <div><Mark>03</Mark><p><strong>Parents remain legible.</strong> At each frontier, a parent is centered between its extreme visible children.</p></div>
-            <div><Mark>04</Mark><p><strong>Both views agree.</strong> One immutable tree and one frontier snapshot feed both projections in the same render.</p></div>
+            <div><Mark>03</Mark><p><strong>Parents remain legible.</strong> A parent stays centered between its extreme children and can clamp into the current viewport for context.</p></div>
+            <div><Mark>04</Mark><p><strong>Both views agree.</strong> One immutable tree and one camera-derived coordinate snapshot feed both projections in the same render.</p></div>
             <div><Mark>05</Mark><p><strong>Random means reproducible.</strong> Every generated tree has a seed for tests, bug reports, and exact replay.</p></div>
           </div>
         </section>
@@ -318,14 +274,13 @@ if (!result.ok) throw new Error(result.error.message);
 
 <PersistentFrontierGraph
   tree={result.tree}
-  frontier={visibleDepth}
   renderNode={YourNode}
   overlays={yourOverlays}
   actions={yourActions}
 />`}</code></pre>
             </div>
             <div className="extension-list">
-              <article><span>RENDER</span><h3>Replace every node</h3><p>A typed renderer receives data, view, depth, reveal amount, selection, and frontier state.</p></article>
+              <article><span>RENDER</span><h3>Replace every node</h3><p>A typed renderer receives data, view, depth, selection, and coordinate-boundary context.</p></article>
               <article><span>DECORATE</span><h3>Style edges & overlays</h3><p>Add read-only layers, annotations, minimaps, analytics, or domain-specific affordances.</p></article>
               <article><span>ACT</span><h3>Attach extra functions</h3><p>Actions emit node ID and tree revision. The library never invents editing semantics for your data.</p></article>
               <article><span>COMPOSE</span><h3>Use the headless core</h3><p>Call the generator, validator, frontier snapshot, cone, and radial layouts without the bundled React UI.</p></article>
