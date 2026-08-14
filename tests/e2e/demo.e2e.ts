@@ -13,7 +13,23 @@ test("opens with the controls and live visualization", async ({ page }) => {
   if (!bounds || !viewport) throw new Error("The generator or viewport is not measurable.");
   expect(bounds.y).toBeLessThan(viewport.height);
   await expect(page.getByLabel("Maximum branches")).toBeInViewport();
-  await expect(page.getByRole("region", { name: "Persistent frontier cone projection" })).toBeInViewport();
+  const cone = page.getByRole("region", { name: "Persistent frontier cone projection" });
+  const radial = page.getByRole("region", { name: "Synchronized radial tree" });
+  await expect(cone).toBeInViewport();
+  const coneBounds = await cone.boundingBox();
+  const radialBounds = await radial.boundingBox();
+  if (!coneBounds || !radialBounds) throw new Error("Graph projections are not measurable.");
+  expect(Math.abs(coneBounds.width - radialBounds.width)).toBeLessThanOrEqual(2);
+  await cone.getByRole("button", { name: "Zoom in cone view" }).click();
+  const zoomedConeBounds = await cone.boundingBox();
+  const zoomedRadialBounds = await radial.boundingBox();
+  if (!zoomedConeBounds || !zoomedRadialBounds) throw new Error("Zoomed projections are not measurable.");
+  expect(Math.abs(zoomedConeBounds.width - zoomedRadialBounds.width)).toBeLessThanOrEqual(2);
+  await expect(page.getByLabel("Maximum branches")).toHaveAttribute("type", "range");
+  await expect(page.getByLabel("Maximum depth")).toHaveAttribute("type", "range");
+  await expect(page.getByLabel("Number of nodes")).toHaveAttribute("type", "range");
+  await expect(page.getByLabel("Number of nodes")).toHaveAttribute("max", "1000");
+  await expect(page.getByLabel("Balance tree")).toBeChecked();
   await expect(page.getByText("Keep the frontier", { exact: false })).toHaveCount(0);
 });
 
@@ -144,7 +160,7 @@ test("regeneration cancels an active frontier replay atomically", async ({ page 
 });
 
 test("switches between uniform and random generation and preserves the last valid tree", async ({ page }) => {
-  const distribution = page.getByLabel("Even distribution");
+  const distribution = page.getByLabel("Balance tree");
   await distribution.uncheck();
   await expect(distribution).not.toBeChecked();
   await page.getByRole("button", { name: /Regenerate/ }).click();

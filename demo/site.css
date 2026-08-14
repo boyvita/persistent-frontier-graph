@@ -291,10 +291,6 @@ input {
   padding: 0.8rem 1rem;
 }
 
-.demo-controls .generator-control input[type="number"] {
-  font-size: 1.4rem;
-}
-
 .demo-controls .generator-footer {
   padding-bottom: 0.65rem;
   padding-top: 0.65rem;
@@ -374,22 +370,11 @@ input {
   text-transform: uppercase;
 }
 
-.generator-control output {
+.generator-control output,
+.generator-control__value {
   color: #11141a;
   font-size: 0.8rem;
   font-weight: 500;
-}
-
-.generator-control input[type="number"] {
-  align-self: end;
-  background: transparent;
-  border: 0;
-  color: #11141a;
-  font-size: 2rem;
-  font-weight: 600;
-  min-width: 0;
-  outline: 0;
-  width: 100%;
 }
 
 input[type="range"] {
