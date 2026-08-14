@@ -145,7 +145,7 @@ test("filters wheel motion in bounded painted frames", async ({ page }) => {
       cancelable: true,
       clientX: box.left + box.width / 2,
       clientY: box.top + box.height / 2,
-      deltaY: -1_200,
+      deltaY: -500,
     }));
   });
   await expect(canvas).toHaveAttribute("data-motion-in-flight", "true");
