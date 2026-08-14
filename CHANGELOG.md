@@ -3,6 +3,12 @@
 Notable project changes are recorded here. The project follows semantic
 versioning after its first tagged release.
 
+## Unreleased
+
+- Keep cone and radial canvases at an equal 50/50 width across responsive and
+  zoom changes.
+- Present branch, depth, and node count as range controls in the demo.
+
 ## 0.1.0 - 2026-08-13
 
 - Initial extensible React and TypeScript library.

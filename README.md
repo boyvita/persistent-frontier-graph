@@ -145,7 +145,9 @@ The complete contract lives in the [API reference](docs/api.md).
 ## Accessibility and performance
 
 The visual canvases support pointer pan, cursor-anchored wheel zoom, responsive
-fit, and zoom buttons. The composite derives the cone camera's exact
+fit, and zoom buttons. The bundled component keeps the cone and radial canvases
+at an equal 50/50 width across zoom and responsive viewport changes. The
+composite derives the cone camera's exact
 card-intersection set before rendering either view; the radial annular sector
 shows only that set while the shared frontier continues to control depth and
 pull motion. A synchronized native node

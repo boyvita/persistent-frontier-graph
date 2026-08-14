@@ -20,7 +20,7 @@
 .pfg-graph__views {
   display: grid;
   gap: 1px;
-  grid-template-columns: minmax(0, 1.45fr) minmax(19rem, 0.75fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   overflow: hidden;
   background: rgba(255, 255, 255, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.1);
@@ -329,8 +329,25 @@
 }
 
 @media (max-width: 900px) {
-  .pfg-graph__views {
-    grid-template-columns: 1fr;
+  .pfg-viewport__header {
+    align-items: flex-start;
+    flex-direction: column;
+    height: 5.6rem;
+    justify-content: center;
+    padding: 0.7rem;
+  }
+
+  .pfg-viewport__header span {
+    display: none;
+  }
+
+  .pfg-camera-controls {
+    width: 100%;
+  }
+
+  .pfg-camera-controls output {
+    margin-right: auto;
+    order: -1;
   }
 
   .pfg-viewport__canvas {

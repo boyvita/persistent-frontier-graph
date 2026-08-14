@@ -57,7 +57,7 @@ function DemoNode({ data, depth, isFrontier, view }: NodeRendererContext<Generat
   );
 }
 
-function NumberControl({
+function RangeControl({
   label,
   max,
   min,
@@ -72,14 +72,16 @@ function NumberControl({
 }) {
   return (
     <label className="generator-control">
-      <span>{label}</span>
+      <span>{label} <strong className="generator-control__value">{value}</strong></span>
       <input
         max={max}
         min={min}
         onChange={(event) => onChange(Number(event.target.value))}
-        type="number"
+        step="1"
+        type="range"
         value={value}
       />
+      <small><span>{min}</span><span>{max}</span></small>
     </label>
   );
 }
@@ -104,8 +106,8 @@ function GeneratorPanel({
   return (
     <div className="generator-panel">
       <div className="generator-grid">
-        <NumberControl label="Maximum branches" max={12} min={1} value={draft.maxBranches} onChange={(value) => onUpdate({ maxBranches: value })} />
-        <NumberControl label="Maximum depth" max={20} min={0} value={draft.maxDepth} onChange={(value) => onUpdate({ maxDepth: value })} />
+        <RangeControl label="Maximum branches" max={12} min={1} value={draft.maxBranches} onChange={(value) => onUpdate({ maxBranches: value })} />
+        <RangeControl label="Maximum depth" max={20} min={0} value={draft.maxDepth} onChange={(value) => onUpdate({ maxDepth: value })} />
         <label className="generator-control generator-control--wide">
           <span>Growth direction <output>{draft.breadthDepthBias.toFixed(2)}</output></span>
           <input
@@ -119,13 +121,13 @@ function GeneratorPanel({
           />
           <small><span>0 · breadth</span><span>1 · depth</span></small>
         </label>
-        <NumberControl label="Number of nodes" max={1000} min={1} value={draft.nodeCount} onChange={(value) => onUpdate({ nodeCount: value })} />
+        <RangeControl label="Number of nodes" max={1000} min={1} value={draft.nodeCount} onChange={(value) => onUpdate({ nodeCount: value })} />
       </div>
       <div className="generator-footer">
         <label className="toggle">
           <input checked={draft.uniform} onChange={(event) => onUpdate({ uniform: event.target.checked })} type="checkbox" />
           <span aria-hidden="true" />
-          <strong>Even distribution</strong>
+          <strong>Balance tree</strong>
           <small>{draft.uniform ? "Balance sibling subtrees" : "Seeded random shape"}</small>
         </label>
         <div className="generator-capacity">

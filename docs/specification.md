@@ -106,6 +106,13 @@ builds a complete candidate, and replaces the current tree only after success.
 On failure, the previous valid graph remains visible and the error is announced.
 Selection and frontier reset with a successful new tree.
 
+### 3.6 Demo controls
+
+The presentation demo MUST expose `maxBranches`, `maxDepth`, and `nodeCount`
+as integer range controls, with `nodeCount` bounded to `1…1000`. The balance
+toggle (`uniform`) and continuous growth-direction control
+(`breadthDepthBias`, `0…1`) remain separate inputs.
+
 ## 4. Frontier
 
 For maximum hierarchy depth `D`, requested frontier `F` is clamped to `[0,D]`.
@@ -213,6 +220,10 @@ zoom, and fit reset. Visual nodes MAY be densely packed below pointer target
 minimums; therefore the composite component MUST also expose a native keyboard
 node navigator with the same visible set and selection.
 
+The bundled composite MUST allocate equal horizontal width to the cone and
+radial canvases. The 50/50 split remains stable across camera zoom, browser
+zoom, and viewport resizing, including narrow viewports.
+
 Controls require programmatic names, visible focus, non-color state cues, and
 WCAG AA contrast. `prefers-reduced-motion` MUST remove non-essential layout
 transitions. Automated browser checks supplement, but do not replace, manual
@@ -250,6 +261,8 @@ applications SHOULD wrap untrusted renderers in their own error boundary.
 - **VIEWPORT-01:** At every cone pan, zoom, resize, and frontier change, radial
   sector membership equals the exact set of revealed cone cards intersecting
   the cone viewport.
+- **VIEWPORT-02:** Cone and radial canvases retain equal width across camera
+  zoom and responsive viewport changes.
 - **EXT-01:** Custom renderers, edge appearance, overlays, labels, actions, and
   headless APIs work without changing the core tree.
 - **A11Y-01:** The full demo passes automated WCAG 2.2 AA checks and supports
