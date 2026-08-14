@@ -220,6 +220,10 @@ zoom, and fit reset. Visual nodes MAY be densely packed below pointer target
 minimums; therefore the composite component MUST also expose a native keyboard
 node navigator with the same visible set and selection.
 
+While the pointer is over either projection canvas, wheel input MUST be
+captured for cursor-anchored camera zoom and MUST NOT scroll the containing
+document. Wheel input outside the canvases retains normal page scrolling.
+
 The bundled composite MUST allocate equal horizontal width to the cone and
 radial canvases. The 50/50 split remains stable across camera zoom, browser
 zoom, and viewport resizing, including narrow viewports.
@@ -263,6 +267,8 @@ applications SHOULD wrap untrusted renderers in their own error boundary.
   the cone viewport.
 - **VIEWPORT-02:** Cone and radial canvases retain equal width across camera
   zoom and responsive viewport changes.
+- **VIEWPORT-03:** Wheel input over either canvas changes its camera zoom
+  without changing document scroll position.
 - **EXT-01:** Custom renderers, edge appearance, overlays, labels, actions, and
   headless APIs work without changing the core tree.
 - **A11Y-01:** The full demo passes automated WCAG 2.2 AA checks and supports

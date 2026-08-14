@@ -33,6 +33,22 @@ test("opens with the controls and live visualization", async ({ page }) => {
   await expect(page.getByText("Keep the frontier", { exact: false })).toHaveCount(0);
 });
 
+test("zooms the projection wheel without scrolling the page", async ({ page }) => {
+  const cone = page.getByRole("region", { name: "Persistent frontier cone projection" });
+  const canvas = cone.locator(".pfg-viewport__canvas");
+  const zoom = cone.getByLabel("cone zoom");
+  const initialZoom = await zoom.textContent();
+  const bounds = await canvas.boundingBox();
+  const viewport = page.viewportSize();
+  if (!bounds || !viewport) throw new Error("Cone canvas is not measurable.");
+  const pointerY = Math.min(bounds.y + 100, viewport.height - 40);
+  await page.mouse.move(bounds.x + bounds.width / 2, pointerY);
+  const initialScroll = await page.evaluate(() => window.scrollY);
+  await page.mouse.wheel(0, 500);
+  await expect(zoom).not.toHaveText(initialZoom ?? "");
+  expect(await page.evaluate(() => window.scrollY)).toBe(initialScroll);
+});
+
 test("generates a bounded tree and keeps both views synchronized", async ({ page }) => {
   const cone = page.getByRole("region", { name: "Persistent frontier cone projection" });
   const radial = page.getByRole("region", { name: "Synchronized radial tree" });

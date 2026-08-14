@@ -138,6 +138,13 @@ export function GraphViewport<TData>({
     ? visibleNodes.filter((node) => radialSector?.visibleNodeIds.has(node.node.id) ?? false).length
     : null;
 
+  useLayoutEffect(() => {
+    const element = canvasRef.current;
+    if (!element) return;
+    element.addEventListener("wheel", camera.onWheel, { passive: false });
+    return () => element.removeEventListener("wheel", camera.onWheel);
+  }, [camera.onWheel]);
+
   return (
     <section className={`pfg-viewport ${className ?? ""}`} aria-label={ariaLabel} data-pfg-view={view}>
       <header className="pfg-viewport__header">
