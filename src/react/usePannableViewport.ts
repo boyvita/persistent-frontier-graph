@@ -20,7 +20,7 @@ interface WheelSession {
 
 const DRAG_THRESHOLD = 3;
 const WHEEL_SESSION_IDLE_MS = 120;
-const MIN_ZOOM = 0.08;
+const MIN_ZOOM = 0.02;
 const MAX_ZOOM = 5;
 
 export interface PannableViewport {

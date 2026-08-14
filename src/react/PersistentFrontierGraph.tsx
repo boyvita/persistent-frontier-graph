@@ -27,6 +27,7 @@ const EMPTY_VIEWPORT_SIZE: Size = { height: 0, width: 0 };
 const CANVAS_PADDING = 48;
 
 interface RevisionViewport {
+  readonly followToken: number;
   readonly revision: string | null;
   readonly viewport: ViewportState;
 }
@@ -70,6 +71,49 @@ function sameSize(left: Size, right: Size): boolean {
   return left.width === right.width && left.height === right.height;
 }
 
+function radialSectorViewport(
+  sector: ReturnType<typeof deriveRadialProjectionSector>,
+  size: Size,
+  fallback: ViewportState,
+): ViewportState {
+  if (!sector || size.width <= 0 || size.height <= 0) return fallback;
+  const outer = Math.max(sector.innerRadius, sector.outerRadius);
+  if (sector.fullCircle) {
+    const zoom = Math.min(5, Math.max(0.02, Math.min(
+      Math.max(1, size.width - CANVAS_PADDING) / Math.max(1, outer * 2),
+      Math.max(1, size.height - CANVAS_PADDING) / Math.max(1, outer * 2),
+    )));
+    return { x: size.width / 2, y: size.height / 2, zoom };
+  }
+
+  const angles = [sector.lowerAngle, sector.upperAngle];
+  for (const angle of [-Math.PI, -Math.PI / 2, 0, Math.PI / 2, Math.PI]) {
+    if (angle >= sector.lowerAngle && angle <= sector.upperAngle) angles.push(angle);
+  }
+  const radii = sector.innerRadius <= 0.001
+    ? [0, outer]
+    : [sector.innerRadius, outer];
+  const points = angles.flatMap((angle) => radii.map((radius) => ({
+    x: Math.cos(angle) * radius,
+    y: Math.sin(angle) * radius,
+  })));
+  const minimumX = Math.min(...points.map((point) => point.x));
+  const maximumX = Math.max(...points.map((point) => point.x));
+  const minimumY = Math.min(...points.map((point) => point.y));
+  const maximumY = Math.max(...points.map((point) => point.y));
+  const zoom = Math.min(5, Math.max(0.02, Math.min(
+    Math.max(1, size.width - CANVAS_PADDING) / Math.max(1, maximumX - minimumX),
+    Math.max(1, size.height - CANVAS_PADDING) / Math.max(1, maximumY - minimumY),
+  )));
+  const centerX = (minimumX + maximumX) / 2;
+  const centerY = (minimumY + maximumY) / 2;
+  return {
+    x: size.width / 2 - centerX * zoom,
+    y: size.height / 2 - centerY * zoom,
+    zoom,
+  };
+}
+
 export function PersistentFrontierGraph<TData>({
   actions = [],
   className,
@@ -89,11 +133,13 @@ export function PersistentFrontierGraph<TData>({
   const [localSelectedId, setLocalSelectedId] = useState<NodeId>(tree.rootId);
   const [coneViewportSize, setConeViewportSize] = useState<Size>(EMPTY_VIEWPORT_SIZE);
   const [radialViewportSize, setRadialViewportSize] = useState<Size>(EMPTY_VIEWPORT_SIZE);
+  const [coneFollowToken, setConeFollowToken] = useState(0);
   const [coneCameraState, setConeCameraState] = useState<RevisionConeCamera>({
     camera: { radialOffset: 0, verticalOffset: 0, zoom: 1 },
     revision: null,
   });
   const [radialCamera, setRadialCamera] = useState<RevisionViewport>({
+    followToken: -1,
     revision: null,
     viewport: { x: 320, y: 270, zoom: 1 },
   });
@@ -127,7 +173,7 @@ export function PersistentFrontierGraph<TData>({
       )))
     : 0.3;
   const radialFitZoom = baseModel && radialViewportSize.width > 0 && radialViewportSize.height > 0
-    ? Math.min(1, Math.max(0.08, Math.min(
+    ? Math.min(1, Math.max(0.02, Math.min(
         radialViewportSize.width / Math.max(1, baseModel.radial.maximumRadius * 2.2),
         radialViewportSize.height / Math.max(1, baseModel.radial.maximumRadius * 2.2),
       )))
@@ -143,7 +189,6 @@ export function PersistentFrontierGraph<TData>({
     zoom: radialFitZoom,
   }), [radialFitZoom, radialViewportSize.height, radialViewportSize.width]);
   const coneCamera = coneCameraState.revision === tree.revision ? coneCameraState.camera : coneHomeCamera;
-  const radialViewport = radialCamera.revision === tree.revision ? radialCamera.viewport : radialHomeViewport;
 
   const radialSpanAt = useCallback((camera: ConeCameraState) => {
     const available = coneViewportSize.width > 0
@@ -189,10 +234,11 @@ export function PersistentFrontierGraph<TData>({
 
   const handleConeCameraChange = useCallback((camera: ConeCameraState) => {
     setConeCameraState({ camera, revision: tree.revision });
+    setConeFollowToken((current) => current + 1);
   }, [tree.revision]);
   const handleRadialViewportChange = useCallback((viewport: ViewportState) => {
-    setRadialCamera({ revision: tree.revision, viewport });
-  }, [tree.revision]);
+    setRadialCamera({ followToken: coneFollowToken, revision: tree.revision, viewport });
+  }, [coneFollowToken, tree.revision]);
   const coneController = useConeProjectionViewport({
     authorityKey: tree.revision,
     camera: coneCamera,
@@ -204,8 +250,6 @@ export function PersistentFrontierGraph<TData>({
     onCameraChange: handleConeCameraChange,
     viewportSize: coneViewportSize,
   });
-  const radialController = usePannableViewport(radialViewport, radialHomeViewport, handleRadialViewportChange);
-
   const modelResult = useMemo(() => {
     if (!baseModel) return baseResult;
     try {
@@ -231,6 +275,15 @@ export function PersistentFrontierGraph<TData>({
     () => projectionViewport && model ? deriveRadialProjectionSector(projectionViewport, model.radial) : null,
     [model, projectionViewport],
   );
+  const followedRadialViewport = useMemo(
+    () => radialSectorViewport(radialSector, radialViewportSize, radialHomeViewport),
+    [radialHomeViewport, radialSector, radialViewportSize],
+  );
+  const radialViewport = radialCamera.revision === tree.revision
+    && radialCamera.followToken === coneFollowToken
+    ? radialCamera.viewport
+    : followedRadialViewport;
+  const radialController = usePannableViewport(radialViewport, radialHomeViewport, handleRadialViewportChange);
 
   useEffect(() => {
     if (modelResult.error) onError?.(modelResult.error);
@@ -271,7 +324,7 @@ export function PersistentFrontierGraph<TData>({
       (outerRadius - innerRadius) / Math.max(1, outerDepth - innerDepth),
     );
     const available = Math.max(1, Math.min(radialViewportSize.width, radialViewportSize.height));
-    const zoom = Math.min(4.5, Math.max(0.08, available / (3 * adjacentBandWidth)));
+    const zoom = Math.min(4.5, Math.max(0.02, available / (3 * adjacentBandWidth)));
     radialController.moveTo({
       x: radialViewportSize.width / 2 - projected.canonicalPosition.x * zoom,
       y: radialViewportSize.height / 2 - projected.canonicalPosition.y * zoom,

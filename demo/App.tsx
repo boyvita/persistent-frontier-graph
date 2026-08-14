@@ -91,24 +91,36 @@ function Mark({ children }: { children: string }) {
 }
 
 function GeneratorPanel({
-  capacity,
   draft,
   error,
+  nodeMaximum,
   onRegenerate,
   onUpdate,
 }: {
-  capacity: number;
   draft: DemoOptions;
   error: string | null;
+  nodeMaximum: number;
   onRegenerate: () => void;
   onUpdate: (patch: Partial<DemoOptions>) => void;
 }) {
   return (
-    <div className="generator-panel">
+    <div aria-labelledby="generator-title" className="generator-panel">
+      <header className="generator-panel__header">
+        <h2 id="generator-title">Generation graph parameters</h2>
+      </header>
       <div className="generator-grid">
         <RangeControl label="Maximum branches" max={12} min={1} value={draft.maxBranches} onChange={(value) => onUpdate({ maxBranches: value })} />
         <RangeControl label="Maximum depth" max={20} min={0} value={draft.maxDepth} onChange={(value) => onUpdate({ maxDepth: value })} />
-        <label className="generator-control generator-control--wide">
+        <RangeControl label="Number of nodes" max={nodeMaximum} min={1} value={draft.nodeCount} onChange={(value) => onUpdate({ nodeCount: value })} />
+      </div>
+      <div className="generator-footer">
+        <label className="toggle">
+          <input checked={draft.uniform} onChange={(event) => onUpdate({ uniform: event.target.checked })} type="checkbox" />
+          <span aria-hidden="true" />
+          <strong>Balance tree</strong>
+          <small>{draft.uniform ? "Balance sibling subtrees" : "Seeded random shape"}</small>
+        </label>
+        <label className="generator-direction">
           <span>Growth direction <output>{draft.breadthDepthBias.toFixed(2)}</output></span>
           <input
             aria-label="Growth direction, zero for breadth and one for depth"
@@ -121,19 +133,6 @@ function GeneratorPanel({
           />
           <small><span>0 · breadth</span><span>1 · depth</span></small>
         </label>
-        <RangeControl label="Number of nodes" max={1000} min={1} value={draft.nodeCount} onChange={(value) => onUpdate({ nodeCount: value })} />
-      </div>
-      <div className="generator-footer">
-        <label className="toggle">
-          <input checked={draft.uniform} onChange={(event) => onUpdate({ uniform: event.target.checked })} type="checkbox" />
-          <span aria-hidden="true" />
-          <strong>Balance tree</strong>
-          <small>{draft.uniform ? "Balance sibling subtrees" : "Seeded random shape"}</small>
-        </label>
-        <div className="generator-capacity">
-          <span>Shape capacity</span>
-          <strong>{Math.min(capacity, 1000).toLocaleString()}</strong>
-        </div>
         <button className="button button--primary generator-button" onClick={onRegenerate} type="button">Regenerate <span>↻</span></button>
       </div>
       {error ? <p className="generator-error" role="alert">{error} The previous valid graph is still shown.</p> : null}
@@ -153,7 +152,14 @@ export function App() {
   const [selectedId, setSelectedId] = useState<string>(tree.rootId);
   const [notice, setNotice] = useState("Drag cards or the background. Use the wheel to navigate without scrolling the page.");
   const index = useMemo(() => indexTree(tree), [tree]);
-  const capacity = treeCapacity(draft.maxBranches, draft.maxDepth);
+  const nodeMaximum = treeCapacity(draft.maxBranches, draft.maxDepth);
+  const updateDraft = (patch: Partial<DemoOptions>) => {
+    setDraft((current) => {
+      const next = { ...current, ...patch };
+      const maximum = treeCapacity(next.maxBranches, next.maxDepth);
+      return { ...next, nodeCount: Math.min(next.nodeCount, maximum) };
+    });
+  };
 
   const regenerate = () => {
     const candidateSeed = nextSeed();
@@ -201,11 +207,11 @@ export function App() {
 
           <div className="demo-controls" id="generator">
             <GeneratorPanel
-              capacity={capacity}
               draft={draft}
               error={error}
+              nodeMaximum={nodeMaximum}
               onRegenerate={regenerate}
-              onUpdate={(patch) => setDraft((current) => ({ ...current, ...patch }))}
+              onUpdate={updateDraft}
             />
           </div>
 
@@ -234,10 +240,23 @@ export function App() {
           </div>
         </section>
 
+        <section className="applications" id="applications">
+          <div className="section-heading">
+            <div><span className="section-index">02 / APPLICATIONS</span><h2>Where it fits</h2></div>
+            <p>Use the same structure when people need both a focused path and a complete overview.</p>
+          </div>
+          <div className="applications-grid">
+            <article><span>SKILLS</span><h3>Progression trees</h3><p>Show the next available abilities in a focused path while keeping the complete skill tree visible.</p></article>
+            <article><span>EDUCATION</span><h3>Knowledge navigation</h3><p>Guide students through subjects, prerequisites, and learning paths in schools, universities, and course platforms.</p></article>
+            <article><span>DOCUMENTATION</span><h3>Large information maps</h3><p>Explore product areas, technical documentation, or research taxonomies without losing the surrounding hierarchy.</p></article>
+            <article><span>PLANNING</span><h3>Decision and roadmap trees</h3><p>Move through one active branch while the radial view preserves alternative routes and overall structure.</p></article>
+          </div>
+        </section>
+
         <section className="rules">
           <div className="rules__lead">
             <span className="section-index">THE CONTRACT</span>
-            <h2>Rules that make<br />motion trustworthy.</h2>
+            <h2>Layout rules</h2>
           </div>
           <div className="rule-list">
             <div><Mark>01</Mark><p><strong>True depth stays true.</strong> Physical radius and screen density never masquerade as hierarchy depth.</p></div>
@@ -250,7 +269,7 @@ export function App() {
 
         <section className="api-section" id="api">
           <div className="section-heading">
-            <div><span className="section-index">02 / EXTEND</span><h2>Use your data and components</h2></div>
+            <div><span className="section-index">03 / EXTEND</span><h2>Use your data and components</h2></div>
             <p>The library owns geometry, validation, and synchronization. You own node content, actions, edge treatment, overlays, selection, and composition.</p>
           </div>
           <div className="api-grid">

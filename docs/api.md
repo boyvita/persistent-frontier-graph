@@ -188,15 +188,18 @@ The cone supports background and direct-card dragging plus fixed-anchor wheel
 sessions. It captures wheel input so navigating either canvas does not scroll
 the document. Cone camera targets use a retargetable, screen-space-bounded rAF
 loop; drag release retains the last painted frame. The built-in radial sector
-hides nodes outside the latest cone camera window;
-its independent camera changes only how that sector is framed. The visual node
+marks exactly the latest cone camera window while all radial nodes and edges
+remain visible. Cone movement fits and centers the complete sector. Direct
+radial pan, zoom, Fit, or point focus overrides following until the next cone
+camera change. The visual node
 body is not the accessibility name. Supply `getNodeLabel` for
 non-standard data. The component's native node navigator mirrors the current
 complete topology for keyboard and assistive-technology access.
 
 Selecting a radial point centers its canonical position and frames roughly
 three adjacent depth bands. Radial wheel and drag updates are coalesced to one
-camera commit per animation frame.
+camera commit per animation frame. The radial follow camera may zoom out to
+`0.02` so the complete sector remains framed in a narrow canvas.
 
 ## Extension contracts
 

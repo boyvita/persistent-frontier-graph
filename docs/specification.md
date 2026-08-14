@@ -108,10 +108,14 @@ Selection and both cameras reset with a successful new tree.
 
 ### 3.6 Demo controls
 
-The presentation demo MUST expose `maxBranches`, `maxDepth`, and `nodeCount`
-as integer range controls, with `nodeCount` bounded to `1…1000`. The balance
-toggle (`uniform`) and continuous growth-direction control
-(`breadthDepthBias`, `0…1`) remain separate inputs.
+The presentation demo MUST title the control surface “Generation graph
+parameters”. It MUST expose `maxBranches`, `maxDepth`, and `nodeCount` as
+integer range controls. The live `nodeCount` maximum is the smaller of `1,000`
+and the current shape capacity; changing branch or depth limits immediately
+clamps the draft count to that maximum. Capacity MUST NOT be shown as a
+separate readout. The balance toggle (`uniform`) and continuous
+growth-direction control (`breadthDepthBias`, `0…1`) remain separate inputs on
+the same control row. The demo MUST NOT expose a frontier control.
 
 ## 4. Frontier
 
@@ -186,16 +190,19 @@ Deeper nodes remain collapsed. This is the radial “pull” visualization.
 The immutable tree is the structural authority. The coordinate frontier is a
 pure derivation of the cone camera unless a fixed diagnostic override is used.
 Selection is controlled or locally managed by the composite React component.
-View cameras are ephemeral state and MUST NOT mutate the tree. The
-radial camera remains independently pannable and zoomable, but radial sector
-membership is authoritative from the cone camera.
+View cameras are ephemeral state and MUST NOT mutate the tree. The radial
+camera follows and centers the complete cone-derived sector whenever the cone
+camera changes. A direct radial pan, zoom, Fit, or point-focus action
+temporarily overrides that follow camera until the next cone camera change.
 
 The cone and radial views MUST use the same coordinate frontier in one React
 commit. The cone camera MUST derive the exact set of cards whose rectangles
-intersect its current viewport. The radial annular
-sector MUST receive that set in the same composite render and MUST show only
-its members; this is the projection-viewfinder contract. The sector geometry
-is the polar envelope of the exact discrete membership set.
+intersect its current viewport. The radial annular sector MUST receive that set
+in the same composite render; this is the projection-viewfinder contract. All
+radial topology nodes and edges remain visible, while sector membership marks
+exactly the cone-window IDs. The sector geometry is the polar envelope of the
+exact discrete membership set. Radial node coordinates MUST continue to pull
+and expand from the same automatic frontier used by the cone.
 
 Changing selection in either visual canvas or the accessible navigator MUST
 update the shared selected node. Camera movement MUST NOT substitute an
@@ -256,6 +263,11 @@ MUST be coalesced to at most one camera commit per animation frame.
 The bundled composite MUST allocate equal horizontal width to the cone and
 radial canvases. The 50/50 split remains stable across camera zoom, browser
 zoom, and viewport resizing, including narrow viewports.
+The public demo MUST fit its top navigation, “Generation graph parameters”
+panel, both projection windows, and graph status within the initial viewport.
+Explanatory content follows below that first-screen workspace and MUST include
+plain-language mechanics plus concrete uses such as skill progression trees
+and educational knowledge navigation.
 
 Controls require programmatic names, visible focus, non-color state cues, and
 WCAG AA contrast. `prefers-reduced-motion` MUST remove non-essential layout
@@ -293,8 +305,8 @@ applications SHOULD wrap untrusted renderers in their own error boundary.
 - **SYNC-01:** Both layout projections use the same camera-derived coordinate
   frontier in one composite render while every topology node remains mounted.
 - **VIEWPORT-01:** At every cone pan, zoom, resize, and frontier change, radial
-  sector membership equals the exact set of cone cards intersecting
-  the cone viewport.
+  sector membership equals the exact set of cone cards intersecting the cone
+  viewport in the same render, while nodes outside that set remain visible.
 - **VIEWPORT-02:** Cone and radial canvases retain equal width across camera
   zoom and responsive viewport changes.
 - **VIEWPORT-03:** Wheel input over either canvas changes its camera zoom
@@ -308,6 +320,11 @@ applications SHOULD wrap untrusted renderers in their own error boundary.
   restores canonical Fit.
 - **VIEWPORT-07:** Radial camera updates are frame-coalesced and radial point
   selection centers the point at a three-band scale.
+- **VIEWPORT-08:** Cone movement centers and fits the complete radial sector;
+  direct radial camera input overrides following only until the next cone
+  movement.
+- **DEMO-01:** Navigation, generation controls, both graph windows, and graph
+  status fit in the first viewport at supported desktop and mobile sizes.
 - **EXT-01:** Custom renderers, edge appearance, overlays, labels, actions, and
   headless APIs work without changing the core tree.
 - **A11Y-01:** The full demo passes automated WCAG 2.2 AA checks and supports

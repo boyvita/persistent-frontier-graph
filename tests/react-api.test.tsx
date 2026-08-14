@@ -96,9 +96,9 @@ describe("React API", () => {
     );
     expect(document.querySelectorAll(".consumer-edge").length).toBeGreaterThan(0);
     const radial = screen.getByRole("region", { name: "Synchronized radial tree" });
-    const hiddenConsumerEdge = radial.querySelector<SVGPathElement>('.consumer-edge[data-in-projection-window="false"]');
-    expect(hiddenConsumerEdge).not.toBeNull();
-    expect(hiddenConsumerEdge).toHaveStyle({ opacity: "0" });
+    const outsideConsumerEdge = radial.querySelector<SVGPathElement>('.consumer-edge[data-in-projection-window="false"]');
+    expect(outsideConsumerEdge).not.toBeNull();
+    expect(outsideConsumerEdge).toHaveStyle({ opacity: "1" });
     expect(screen.getByTestId("overlay-cone")).toBeInTheDocument();
     expect(screen.getByTestId("overlay-radial")).toBeInTheDocument();
     expect(screen.getByRole("option", { name: /Accessible Node 1/ })).toBeInTheDocument();

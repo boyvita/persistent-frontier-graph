@@ -124,9 +124,14 @@ every pan, zoom, resize, or automatically derived frontier change.
 
 The radial view converts the minimum and maximum member depths to annular ring
 boundaries and the ordered member angles to a sector envelope. Geometry makes
-the viewfinder legible; the discrete set remains authoritative. Radial nodes
-and edges outside that set are hidden, so the points shown by the radial
-viewfinder are exactly the cards currently present in the cone viewport.
+the viewfinder legible; the discrete set remains authoritative. All radial
+nodes and edges stay visible. Membership styling distinguishes exactly the
+cards currently present in the cone viewport.
+
+The sector's exact polar bounds define a follow camera that fits and centers
+the complete shape. Direct radial camera input becomes a manual override. The
+next cone camera change discards that override and derives a new follow camera
+from the new sector in the same composite state.
 
 ## Complexity
 
@@ -136,9 +141,8 @@ depth `D`; configured depth is capped at 64. Only lower, upper, and canonical
 sets are produced for a request—there is no cache of every possible level.
 
 The React layer keeps the topology mounted so frontier motion preserves node
-identity. The radial viewfinder alone hides points outside the exact cone
-window. At 1,000 nodes, consumer renderer complexity and label density become
-the dominant costs.
+identity. At 1,000 nodes, consumer renderer complexity and radial label density
+become the dominant costs.
 
 The committed camera state is also the painted state. Position changes do not
 run through a second CSS transform tween, because that would make hit testing

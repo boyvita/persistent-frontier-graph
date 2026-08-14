@@ -86,8 +86,12 @@ export function Example() {
 
 An impossible request returns a typed `capacity_exceeded` result. It never
 silently changes `nodeCount`, depth, or branching limits. The playground's
-**Regenerate** button creates a new seed and replaces the tree only after a
-valid result is complete.
+Number of nodes slider prevents that invalid state by using the current shape
+capacity as its live maximum. **Regenerate** creates a new seed and replaces
+the tree only after a valid result is complete.
+
+Typical uses include skill progression trees, educational prerequisite and
+knowledge maps, documentation taxonomies, and roadmap or decision trees.
 
 ## Extensibility
 
@@ -128,8 +132,10 @@ motion keeps the painted cards and gesture state in one coordinate frame. The
 bundled component keeps the cone and radial canvases at an equal 50/50 width
 across zoom and responsive viewport changes. The composite derives the cone
 camera's exact card-intersection set before rendering either view; the radial annular sector
-shows only that set while the camera-derived frontier controls coordinate
-collapse and pull motion. Every topology node remains mounted. A synchronized native node
+marks exactly that set while every radial node remains visible. Cone movement
+centers and fits the complete sector; direct radial camera input temporarily
+overrides following. The camera-derived frontier controls coordinate collapse
+and pull motion. Every topology node remains mounted. A synchronized native node
 navigator provides a keyboard and assistive-technology equivalent even when
 hundreds of graph points are packed into a small viewport. Focus indicators,
 reduced-motion behavior, labels, and WCAG 2.2 automated checks are part of CI.

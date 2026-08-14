@@ -163,11 +163,6 @@
   vector-effect: non-scaling-stroke;
 }
 
-.pfg-node--radial[data-in-projection-window="false"] {
-  opacity: 0;
-  pointer-events: none;
-}
-
 .pfg-node--radial[data-in-projection-window="true"] {
   box-shadow: 0 0 0 3px rgba(186, 252, 74, 0.12);
 }

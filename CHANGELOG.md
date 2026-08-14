@@ -18,6 +18,11 @@ versioning after its first tagged release.
 - Restore the source rAF motion filter, live gesture retargeting, painted-frame
   release behavior, and canonical overview reset.
 - Coalesce radial camera updates per frame and restore three-band point focus.
+- Keep all radial nodes visible, move them with the automatic frontier, and
+  follow the complete centered cone sector until direct radial camera input.
+- Compact the named generation panel into the first-screen workspace, place
+  growth direction beside Balance, and clamp node count through its slider.
+- Add practical skill-tree, education, documentation, and planning examples.
 
 ## 0.1.0 - 2026-08-13
 

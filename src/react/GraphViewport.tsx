@@ -202,7 +202,7 @@ export function GraphViewport<TData>({
                   key={edge.id}
                   style={{
                     ...appearance?.style,
-                    opacity: isRevealed(edge.reveal) && isInsideRadialWindow ? edge.reveal : 0,
+                    opacity: isRevealed(edge.reveal) ? edge.reveal : 0,
                   }}
                 />
               );
@@ -213,7 +213,7 @@ export function GraphViewport<TData>({
               const selected = selectedId === projected.node.id;
               const isInsideRadialWindow = view !== "radial"
                 || Boolean(radialSector?.visibleNodeIds.has(projected.node.id));
-              const isVisible = isRevealed(projected.reveal) && isInsideRadialWindow;
+              const isVisible = isRevealed(projected.reveal);
               const content: ReactNode = renderNode?.({
                 data: projected.node.data,
                 depth: projected.depth,

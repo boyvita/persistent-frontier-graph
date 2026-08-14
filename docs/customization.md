@@ -151,7 +151,8 @@ For a custom presentation that keeps the camera viewfinder, call
 `deriveProjectionViewportWindow` with the cone camera and then
 `deriveRadialProjectionSector` with the resulting window and radial layout.
 Treat the returned ID set as authoritative; the angle/radius envelope is its
-visual boundary.
+visual boundary. Keep non-member radial nodes visible when matching the bundled
+component, and use the ID set for membership styling rather than filtering.
 
 ## Extension boundary
 
