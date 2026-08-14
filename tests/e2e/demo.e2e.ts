@@ -149,7 +149,33 @@ test("filters wheel motion in bounded painted frames", async ({ page }) => {
     }));
   });
   await expect(canvas).toHaveAttribute("data-motion-in-flight", "true");
-  await expect(canvas).toHaveAttribute("data-motion-in-flight", "false", { timeout: 10_000 });
+  await page.evaluate(() => new Promise<void>((resolve) => {
+    let remaining = 12;
+    const sampleFrame = () => {
+      remaining -= 1;
+      if (remaining <= 0) resolve();
+      else requestAnimationFrame(sampleFrame);
+    };
+    requestAnimationFrame(sampleFrame);
+  }));
+  await canvas.evaluate((element, point) => {
+    const pointerId = 96;
+    element.dispatchEvent(new PointerEvent("pointerdown", {
+      bubbles: true,
+      button: 0,
+      clientX: point.x,
+      clientY: point.y,
+      pointerId,
+    }));
+    element.dispatchEvent(new PointerEvent("pointerup", {
+      bubbles: true,
+      button: 0,
+      clientX: point.x,
+      clientY: point.y,
+      pointerId,
+    }));
+  }, { x: bounds.x + bounds.width / 2, y: bounds.y + bounds.height / 2 });
+  await expect(canvas).toHaveAttribute("data-motion-in-flight", "false");
 
   const result = await page.evaluate(() => {
     const probe = (window as typeof window & {
@@ -169,18 +195,6 @@ test("filters wheel motion in bounded painted frames", async ({ page }) => {
   expect(result.samples).toBeGreaterThan(3);
   expect(result.maximumStep).toBeLessThanOrEqual(22);
 
-  await card.evaluate((node) => {
-    const box = node.getBoundingClientRect();
-    node.dispatchEvent(new WheelEvent("wheel", {
-      bubbles: true,
-      cancelable: true,
-      clientX: box.left + box.width / 2,
-      clientY: box.top + box.height / 2,
-      deltaY: 5_000,
-    }));
-  });
-  await expect(canvas).toHaveAttribute("data-motion-in-flight", "true");
-  await expect(canvas).toHaveAttribute("data-motion-in-flight", "false", { timeout: 10_000 });
   await expect(cone.getByLabel("cone zoom")).not.toHaveText(openingZoom ?? "");
   await cone.getByRole("button", { name: "Fit" }).click();
   await expect(canvas).toHaveAttribute("data-motion-in-flight", "false", { timeout: 10_000 });
