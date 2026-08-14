@@ -53,6 +53,8 @@ export interface PersistentFrontierGraphProps<TData> {
   readonly renderEdge?: EdgeRenderer<TData>;
   readonly renderNode?: NodeRenderer<TData>;
   readonly selectedId?: NodeId | null;
+  /** Render the optional selected-node navigator and action footer. */
+  readonly showFooter?: boolean;
   readonly tree: FrontierTree<TData>;
 }
 
@@ -129,6 +131,7 @@ export function PersistentFrontierGraph<TData>({
   renderEdge,
   renderNode,
   selectedId: controlledSelectedId,
+  showFooter = true,
   tree,
 }: PersistentFrontierGraphProps<TData>) {
   const [localSelectedId, setLocalSelectedId] = useState<NodeId>(tree.rootId);
@@ -387,39 +390,41 @@ export function PersistentFrontierGraph<TData>({
           view="radial"
         />
       </div>
-      <footer className="pfg-selection" aria-live="polite">
-        <div className="pfg-selection__summary">
-          <span>Selected node</span>
-          <strong>{selectedNode?.id ?? "None"}</strong>
-          {selectedNode ? <small>depth {model.index.depthById.get(selectedNode.id) ?? 0}</small> : null}
-        </div>
-        <label className="pfg-node-navigator">
-          <span>Node navigator</span>
-          <select value={selectedNode?.id ?? tree.rootId} onChange={(event) => select(event.target.value)}>
-            {model.cone.nodes.map((node) => (
-              <option key={node.node.id} value={node.node.id}>
-                {getNodeLabel?.(node.node) ?? (typeof node.node.data === "object" && node.node.data !== null && "label" in node.node.data
-                  ? String(node.node.data.label)
-                  : node.node.id)} · depth {node.depth}
-              </option>
-            ))}
-          </select>
-        </label>
-        {availableActions.length > 0 ? (
-          <div className="pfg-selection__actions">
-            {availableActions.map((action) => (
-              <button
-                data-pfg-interactive
-                key={action.id}
-                onClick={() => selectedNode && onAction?.({ action, node: selectedNode, treeRevision: tree.revision })}
-                type="button"
-              >
-                {action.label}
-              </button>
-            ))}
+      {showFooter ? (
+        <footer className="pfg-selection" aria-live="polite">
+          <div className="pfg-selection__summary">
+            <span>Selected node</span>
+            <strong>{selectedNode?.id ?? "None"}</strong>
+            {selectedNode ? <small>depth {model.index.depthById.get(selectedNode.id) ?? 0}</small> : null}
           </div>
-        ) : null}
-      </footer>
+          <label className="pfg-node-navigator">
+            <span>Node navigator</span>
+            <select value={selectedNode?.id ?? tree.rootId} onChange={(event) => select(event.target.value)}>
+              {model.cone.nodes.map((node) => (
+                <option key={node.node.id} value={node.node.id}>
+                  {getNodeLabel?.(node.node) ?? (typeof node.node.data === "object" && node.node.data !== null && "label" in node.node.data
+                    ? String(node.node.data.label)
+                    : node.node.id)} · depth {node.depth}
+                </option>
+              ))}
+            </select>
+          </label>
+          {availableActions.length > 0 ? (
+            <div className="pfg-selection__actions">
+              {availableActions.map((action) => (
+                <button
+                  data-pfg-interactive
+                  key={action.id}
+                  onClick={() => selectedNode && onAction?.({ action, node: selectedNode, treeRevision: tree.revision })}
+                  type="button"
+                >
+                  {action.label}
+                </button>
+              ))}
+            </div>
+          ) : null}
+        </footer>
+      ) : null}
     </div>
   );
 }

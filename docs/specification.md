@@ -110,12 +110,16 @@ Selection and both cameras reset with a successful new tree.
 
 The presentation demo MUST title the control surface “Generation graph
 parameters”. It MUST expose `maxBranches`, `maxDepth`, and `nodeCount` as
-integer range controls. The live `nodeCount` maximum is the smaller of `1,000`
-and the current shape capacity; changing branch or depth limits immediately
+integer range controls. The public demo exposes `maxBranches` from `1…10`,
+`maxDepth` from `0…20`, and a live `nodeCount` maximum equal to the smaller of
+`300` and the current shape capacity. Changing branch or depth limits immediately
 clamps the draft count to that maximum. Capacity MUST NOT be shown as a
 separate readout. The balance toggle (`uniform`) and continuous
 growth-direction control (`breadthDepthBias`, `0…1`) remain separate inputs on
-the same control row. The demo MUST NOT expose a frontier control.
+the same control row. The demo MUST NOT expose a frontier control. Generated
+demo labels MUST form a recognizable academic prerequisite map: root branches
+name study domains and descendants inherit that domain while progressing to
+more advanced topics.
 
 ## 4. Frontier
 
@@ -208,8 +212,8 @@ exactly the cone-window IDs. The sector geometry is the polar envelope of the
 exact discrete membership set. Radial node coordinates MUST continue to pull
 and expand from the same automatic frontier used by the cone.
 
-Changing selection in either visual canvas or the accessible navigator MUST
-update the shared selected node. Camera movement MUST NOT substitute an
+Changing selection in either visual canvas or the optional accessible navigator
+MUST update the shared selected node. Camera movement MUST NOT substitute an
 ancestor selection because the topology remains present.
 
 ## 8. Extensibility
@@ -233,9 +237,11 @@ Both views MUST provide pointer pan, cursor-anchored wheel zoom, button-based
 zoom, and fit reset. The cone MUST allow a drag to begin on either its
 background or a node card. A drag starts only after a three-pixel threshold,
 captures its pointer, and suppresses the release click after movement.
-Visual nodes MAY be densely packed below pointer target
-minimums; therefore the composite component MUST also expose a native keyboard
-node navigator containing the complete topology and shared selection.
+Visual nodes MAY be densely packed below pointer target minimums. The composite
+component MUST expose a native keyboard node navigator containing the complete
+topology and shared selection by default. Consumers MAY hide the complete
+selection footer when a compact visual-only embedding is required; the public
+demo uses that compact mode.
 
 While the pointer is over either projection canvas, wheel input MUST be
 captured for cursor-anchored camera zoom and MUST NOT scroll the containing
@@ -338,10 +344,13 @@ applications SHOULD wrap untrusted renderers in their own error boundary.
   release frame.
 - **DEMO-01:** Navigation, generation controls, both graph windows, and graph
   status fit in the first viewport at supported desktop and mobile sizes.
+- **DEMO-02:** The demo exposes at most 300 nodes, 10 branches, and 20 levels;
+  it uses academic prerequisite labels and omits the graph selection footer.
 - **EXT-01:** Custom renderers, edge appearance, overlays, labels, actions, and
   headless APIs work without changing the core tree.
 - **A11Y-01:** The full demo passes automated WCAG 2.2 AA checks and supports
-  keyboard zoom, selection, and native node navigation.
+  keyboard camera controls; the reusable component exposes native node
+  navigation unless its optional footer is disabled.
 - **PERF-01:** The headless model returns 1,000 cone and 1,000 radial nodes under
   the bounded test budget.
 - **DIST-01:** Strict typecheck, lint, unit/component/browser tests, demo/library

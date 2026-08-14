@@ -90,6 +90,10 @@ Number of nodes slider prevents that invalid state by using the current shape
 capacity as its live maximum. **Regenerate** creates a new seed and replaces
 the tree only after a valid result is complete.
 
+The public playground intentionally caps its controls at 300 nodes, 10 children
+per node, and 20 levels so wide, deep, and compact academic maps remain easy to
+compare. The underlying generator retains its documented 1,000-node ceiling.
+
 Typical uses include skill progression trees, educational prerequisite and
 knowledge maps, documentation taxonomies, and roadmap or decision trees.
 
@@ -138,9 +142,9 @@ camera's exact card-intersection set before rendering either view; the radial an
 marks exactly that set while every radial node remains visible. Cone movement
 centers and fits the complete sector; direct radial camera input temporarily
 overrides following. The camera-derived frontier controls coordinate collapse
-and pull motion. Every topology node remains mounted. A synchronized native node
-navigator provides a keyboard and assistive-technology equivalent even when
-hundreds of graph points are packed into a small viewport. Focus indicators,
+and pull motion. Every topology node remains mounted. The reusable component
+shows a synchronized native node navigator by default and can hide the complete
+footer with `showFooter={false}` for visual-only embeds. Focus indicators,
 reduced-motion behavior, labels, and WCAG 2.2 automated checks are part of CI.
 
 The core uses immutable inputs, iterative traversal, and linear-size output.

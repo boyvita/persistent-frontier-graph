@@ -35,10 +35,15 @@ test("opens with the controls and live visualization", async ({ page }) => {
   if (!zoomedConeBounds || !zoomedRadialBounds) throw new Error("Zoomed projections are not measurable.");
   expect(Math.abs(zoomedConeBounds.width - zoomedRadialBounds.width)).toBeLessThanOrEqual(2);
   await expect(page.getByLabel("Maximum branches")).toHaveAttribute("type", "range");
+  await expect(page.getByLabel("Maximum branches")).toHaveAttribute("max", "10");
   await expect(page.getByLabel("Maximum depth")).toHaveAttribute("type", "range");
+  await expect(page.getByLabel("Maximum depth")).toHaveAttribute("max", "20");
   await expect(page.getByLabel("Number of nodes")).toHaveAttribute("type", "range");
-  await expect(page.getByLabel("Number of nodes")).toHaveAttribute("max", "1000");
+  await expect(page.getByLabel("Number of nodes")).toHaveAttribute("max", "300");
   await expect(page.getByLabel("Balance tree")).toBeChecked();
+  await expect(page.getByLabel("Node navigator")).toHaveCount(0);
+  await expect(page.locator(".pfg-selection")).toHaveCount(0);
+  await expect(cone.locator('[data-node-id="node-0000"]')).toContainText("Academic learning map");
   await expect(page.getByText("Shape capacity", { exact: true })).toHaveCount(0);
   await expect(page.getByText("Keep the frontier", { exact: false })).toHaveCount(0);
   const balanceBounds = await page.getByLabel("Balance tree").boundingBox();
@@ -299,7 +304,7 @@ test("generates a bounded tree and keeps both views synchronized", async ({ page
   const directGrab = cone.locator(`[data-node-id="${directGrabId}"]`);
   const grabBounds = await directGrab.boundingBox();
   if (!grabBounds) throw new Error("A visible cone card is not measurable.");
-  const selectedBeforeDrag = await page.getByLabel("Node navigator").inputValue();
+  const selectedBeforeDrag = await cone.locator(".pfg-node.is-selected").getAttribute("data-node-id");
   const offsetBeforeDrag = Number(await graph.getAttribute("data-radial-offset"));
   await page.mouse.move(grabBounds.x + grabBounds.width / 2, grabBounds.y + grabBounds.height / 2);
   await page.mouse.down();
@@ -315,7 +320,7 @@ test("generates a bounded tree and keeps both views synchronized", async ({ page
     requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
   }));
   await expect(graph).toHaveAttribute("data-radial-offset", frozenOffset ?? "");
-  await expect(page.getByLabel("Node navigator")).toHaveValue(selectedBeforeDrag);
+  await expect(cone.locator(".pfg-node.is-selected")).toHaveAttribute("data-node-id", selectedBeforeDrag ?? "");
   await expect.poll(async () => {
     const coneIds = await cone.locator('[data-node-id][data-in-viewport="true"]')
       .evaluateAll((nodes) => nodes.map((node) => node.getAttribute("data-node-id")).sort());
@@ -357,11 +362,11 @@ test("generates a bounded tree and keeps both views synchronized", async ({ page
   await expect(radial.locator("[data-node-id]")).toHaveCount(48);
   await expect(graph).toHaveAttribute("data-frontier-mode", "auto");
 
-  await page.getByLabel("Number of nodes").fill("1000");
+  await page.getByLabel("Number of nodes").fill("300");
   await page.getByRole("button", { name: /Regenerate/ }).click();
-  await expect(page.getByRole("status", { name: "Graph status" })).toContainText("Generated 1000 nodes");
-  await expect(cone.locator("[data-node-id]")).toHaveCount(1000);
-  await expect(radial.locator("[data-node-id]")).toHaveCount(1000);
+  await expect(page.getByRole("status", { name: "Graph status" })).toContainText("Generated 300 nodes");
+  await expect(cone.locator("[data-node-id]")).toHaveCount(300);
+  await expect(radial.locator("[data-node-id]")).toHaveCount(300);
 });
 
 test("centers the complete radial sector after cone movement", async ({ page }) => {
@@ -513,19 +518,13 @@ test("switches generation mode and clamps node count to shape capacity", async (
     .locator("[data-node-id]")).toHaveCount(3);
 });
 
-test("supports keyboard camera and node controls", async ({ page }) => {
+test("supports keyboard camera and code controls", async ({ page }) => {
   const cone = page.getByRole("region", { name: "Persistent frontier cone projection" });
   const output = cone.getByLabel("cone zoom");
   const initial = await output.textContent();
   await cone.getByRole("button", { name: "Zoom in cone view" }).focus();
   await page.keyboard.press("Enter");
   await expect(output).not.toHaveText(initial ?? "");
-
-  const navigator = page.getByLabel("Node navigator");
-  await navigator.focus();
-  await navigator.selectOption("node-0001");
-  await expect(navigator).toHaveValue("node-0001");
-  await expect(page.getByText("node-0001", { exact: true })).toBeVisible();
 
   const codeSample = page.getByLabel("Persistent Frontier Graph React example");
   await codeSample.focus();
@@ -536,7 +535,7 @@ test("selects a demo node exactly once through custom rendered content", async (
   const cone = page.getByRole("region", { name: "Persistent frontier cone projection" });
   const target = cone.locator('[data-node-id="node-0001"] .demo-node strong');
   await target.dispatchEvent("click", { bubbles: true });
-  await expect(page.getByLabel("Node navigator")).toHaveValue("node-0001");
+  await expect(cone.locator('[data-node-id="node-0001"]')).toHaveClass(/is-selected/);
 });
 
 test("focuses a selected radial point across three depth bands", async ({ page }) => {
@@ -548,7 +547,7 @@ test("focuses a selected radial point across three depth bands", async ({ page }
   if (!targetId) throw new Error("No radial focus target is available.");
   const initialZoom = await radial.getByLabel("radial zoom").textContent();
   await target.dispatchEvent("click", { bubbles: true });
-  await expect(page.getByLabel("Node navigator")).toHaveValue(targetId);
+  await expect(target).toHaveClass(/is-selected/);
   await expect(radial.getByLabel("radial zoom")).not.toHaveText(initialZoom ?? "");
   const canvasBounds = await canvas.boundingBox();
   const nodeBounds = await target.boundingBox();

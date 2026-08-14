@@ -179,6 +179,7 @@ Optional props:
 | `overlays` | Read-only visual overlay descriptors |
 | `actions` | Extra actions available for the selected node |
 | `onAction` | Receives action, node, and exact producer revision token |
+| `showFooter` | Shows the selected-node summary, navigator, and actions; defaults to `true` |
 | `layoutOptions` | Cone/radial headless layout configuration |
 | `onError` | Structured invalid-tree notification |
 | `onProjectionViewportChange` | Notification with the exact cone camera window after its synchronized composite commit |
@@ -193,8 +194,10 @@ remain visible. Cone movement fits and centers the complete sector. Direct
 radial pan, zoom, Fit, or point focus overrides following until the next cone
 camera change. The visual node
 body is not the accessibility name. Supply `getNodeLabel` for
-non-standard data. The component's native node navigator mirrors the current
-complete topology for keyboard and assistive-technology access.
+non-standard data. By default, the component's native node navigator mirrors
+the current complete topology for keyboard and assistive-technology access.
+Set `showFooter={false}` for a compact visual-only embedding; this also hides
+the selected-node summary and action bar.
 
 The bundled cone opens at `max(responsiveFit, 0.30)` and keeps Fit as a
 separate complete-overview command. Default cone geometry is a `210 × 58`

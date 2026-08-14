@@ -73,6 +73,12 @@ describe("React API", () => {
     expect(onAction).toHaveBeenCalledWith(expect.objectContaining({ treeRevision: candidate.revision }));
   });
 
+  it("can omit the optional selected-node footer", () => {
+    const { container } = render(<PersistentFrontierGraph showFooter={false} tree={tree()} />);
+    expect(container.querySelector(".pfg-selection")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Node navigator")).not.toBeInTheDocument();
+  });
+
   it("supports edge, overlay, label, and renderer selection extensions", () => {
     const onSelected = vi.fn();
     const candidate = tree();

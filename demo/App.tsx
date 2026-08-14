@@ -1,14 +1,13 @@
-import { useMemo, useState, type ChangeEvent } from "react";
+import { useState, type ChangeEvent } from "react";
 import {
   PersistentFrontierGraph,
   generateTree,
-  indexTree,
   treeCapacity,
   type GeneratedNodeData,
   type GenerateTreeOptions,
-  type NodeAction,
   type NodeRendererContext,
 } from "../src";
+import { createAcademicCurriculumData } from "./academicCurriculum";
 
 interface DemoOptions {
   breadthDepthBias: number;
@@ -30,11 +29,7 @@ const LAYOUT_OPTIONS = {
   cone: { columnGap: 48, hierarchyGap: 10, localGap: 10, maximumHierarchyGap: 100 },
   radial: { minimumRingGap: 132, nodePitch: 50, seamPadding: 0.12 },
 } as const;
-
-const DEMO_ACTIONS: readonly NodeAction<GeneratedNodeData>[] = [
-  { id: "copy-id", label: "Copy node ID" },
-  { id: "copy-json", label: "Copy as JSON" },
-];
+const DEMO_NODE_LIMIT = 300;
 
 function nextSeed(): string {
   const values = new Uint32Array(2);
@@ -43,7 +38,10 @@ function nextSeed(): string {
 }
 
 function buildTree(options: DemoOptions, seed: string) {
-  return generateTree({ ...options, seed } satisfies GenerateTreeOptions);
+  return generateTree(
+    { ...options, seed } satisfies GenerateTreeOptions,
+    createAcademicCurriculumData(),
+  );
 }
 
 function DemoNode({ data, view }: NodeRendererContext<GeneratedNodeData>) {
@@ -107,7 +105,7 @@ function GeneratorPanel({
         <h2 id="generator-title">Generation graph parameters</h2>
       </header>
       <div className="generator-grid">
-        <RangeControl label="Maximum branches" max={12} min={1} value={draft.maxBranches} onChange={(value) => onUpdate({ maxBranches: value })} />
+        <RangeControl label="Maximum branches" max={10} min={1} value={draft.maxBranches} onChange={(value) => onUpdate({ maxBranches: value })} />
         <RangeControl label="Maximum depth" max={20} min={0} value={draft.maxDepth} onChange={(value) => onUpdate({ maxDepth: value })} />
         <RangeControl label="Number of nodes" max={nodeMaximum} min={1} value={draft.nodeCount} onChange={(value) => onUpdate({ nodeCount: value })} />
       </div>
@@ -149,12 +147,11 @@ export function App() {
   const [error, setError] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string>(tree.rootId);
   const [notice, setNotice] = useState("Drag cards or the background. Use the wheel to navigate without scrolling the page.");
-  const index = useMemo(() => indexTree(tree), [tree]);
-  const nodeMaximum = treeCapacity(draft.maxBranches, draft.maxDepth);
+  const nodeMaximum = Math.min(DEMO_NODE_LIMIT, treeCapacity(draft.maxBranches, draft.maxDepth));
   const updateDraft = (patch: Partial<DemoOptions>) => {
     setDraft((current) => {
       const next = { ...current, ...patch };
-      const maximum = treeCapacity(next.maxBranches, next.maxDepth);
+      const maximum = Math.min(DEMO_NODE_LIMIT, treeCapacity(next.maxBranches, next.maxDepth));
       return { ...next, nodeCount: Math.min(next.nodeCount, maximum) };
     });
   };
@@ -171,13 +168,6 @@ export function App() {
     setSelectedId(result.tree.rootId);
     setError(null);
     setNotice(`Generated ${result.tree.nodes.length} nodes from seed ${result.seed}.`);
-  };
-
-  const handleAction = async (actionId: string, nodeId: string) => {
-    const node = index.byId.get(nodeId);
-    const value = actionId === "copy-json" ? JSON.stringify(node, null, 2) : nodeId;
-    await navigator.clipboard.writeText(value);
-    setNotice(actionId === "copy-json" ? "Node JSON copied." : `Copied ${nodeId}.`);
   };
 
   return (
@@ -214,12 +204,11 @@ export function App() {
           </div>
 
           <PersistentFrontierGraph
-            actions={DEMO_ACTIONS}
             layoutOptions={LAYOUT_OPTIONS}
-            onAction={(event) => { void handleAction(event.action.id, event.node.id); }}
             onSelectedIdChange={setSelectedId}
             renderNode={DemoNode}
             selectedId={selectedId}
+            showFooter={false}
             tree={tree}
           />
           <p aria-label="Graph status" className="demo-status" role="status"><span className="status-light" />{notice} <small>seed · {seed}</small></p>
