@@ -44,7 +44,7 @@ test("zooms the projection wheel without scrolling the page", async ({ page }) =
   const pointerY = Math.min(bounds.y + 100, viewport.height - 40);
   await page.mouse.move(bounds.x + bounds.width / 2, pointerY);
   const initialScroll = await page.evaluate(() => window.scrollY);
-  await page.mouse.wheel(0, 500);
+  await page.mouse.wheel(0, -500);
   await expect(zoom).not.toHaveText(initialZoom ?? "");
   expect(await page.evaluate(() => window.scrollY)).toBe(initialScroll);
 });
