@@ -162,6 +162,7 @@ test("filters wheel motion in bounded painted frames", async ({ page }) => {
 });
 
 test("generates a bounded tree and keeps both views synchronized", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
   const cone = page.getByRole("region", { name: "Persistent frontier cone projection" });
   const radial = page.getByRole("region", { name: "Synchronized radial tree" });
   const graph = page.locator(".pfg-graph");
@@ -321,6 +322,7 @@ test("generates a bounded tree and keeps both views synchronized", async ({ page
 });
 
 test("centers the complete radial sector after cone movement", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
   const cone = page.getByRole("region", { name: "Persistent frontier cone projection" });
   const radial = page.getByRole("region", { name: "Synchronized radial tree" });
   const coneCanvas = cone.locator(".pfg-viewport__canvas");
